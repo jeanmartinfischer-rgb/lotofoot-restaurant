@@ -1,0 +1,9 @@
+{
+  "name": "LotoFoot Restaurant",
+  "short_name": "LotoFoot",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B0B0D",
+  "theme_color": "#8E1B22",
+  "icons": [{ "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }]
+}

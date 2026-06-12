@@ -1,0 +1,6 @@
+{
+  "crons": [
+    { "path": "/api/sync-matches", "schedule": "*/5 * * * *" },
+    { "path": "/api/calculate-points", "schedule": "*/5 * * * *" }
+  ]
+}
