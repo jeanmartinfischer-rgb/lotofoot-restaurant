@@ -48,9 +48,11 @@ export default function Login() {
           className="w-full rounded-xl border border-ligne bg-ardoise px-4 py-3" />
       )}
       <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)}
-        className="w-full rounded-xl border border-ligne bg-ardoise px-4 py-3" />
-      <input type="password" placeholder="Mot de passe" value={password} onChange={(e) => setPassword(e.target.value)}
-        className="w-full rounded-xl border border-ligne bg-ardoise px-4 py-3" />
+  autoComplete="email"
+  className="w-full rounded-xl border border-ligne bg-ardoise px-4 py-3" />
+     <input type="password" placeholder="Mot de passe" value={password} onChange={(e) => setPassword(e.target.value)}
+  autoComplete="current-password"
+  className="w-full rounded-xl border border-ligne bg-ardoise px-4 py-3" />
 
       {error && <p className="text-center text-sm text-sang-vif">{error}</p>}
 
