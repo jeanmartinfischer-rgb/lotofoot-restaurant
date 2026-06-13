@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
+import MatchCard from '@/components/MatchCard';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,16 +13,23 @@ export default async function Home() {
   if (!user) redirect('/login');
 
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-
   const { data: rangs } = await supabase.from('leaderboard_season').select('*');
-  const me = rangs?.find((r) => r.user_id === user.id);
+  const me = rangs?.find((r: any) => r.user_id === user.id);
 
   const now = new Date().toISOString();
-  const in24h = new Date(Date.now() + 24 * 3600000).toISOString();
+  const in48h = new Date(Date.now() + 48 * 3600000).toISOString();
   const { data: prochains } = await supabase
     .from('matches').select('*')
-    .gte('kickoff', now).lte('kickoff', in24h)
-    .order('kickoff').limit(8);
+    .gte('kickoff', now)
+    .lte('kickoff', in48h)
+    .order('kickoff')
+    .limit(6);
+
+  const { data: preds } = await supabase
+    .from('predictions').select('*')
+    .eq('user_id', user.id);
+
+  const predByMatch = new Map((preds ?? []).map((p: any) => [p.match_id, p]));
 
   return (
     <div className="space-y-6">
@@ -55,25 +63,25 @@ export default async function Home() {
       </section>
 
       <section>
-        <div className="mb-2 flex items-baseline justify-between">
-          <h2 className="font-display text-sm">MATCHS DANS LES 24 H</h2>
+        <div className="mb-3 flex items-baseline justify-between">
+          <h2 className="font-display text-sm">PROCHAINS MATCHS — PARIEZ !</h2>
           <Link href="/matchs" className="text-xs font-semibold text-sang-vif">Tout voir</Link>
         </div>
         {!prochains?.length && (
           <p className="rounded-2xl border border-ligne bg-ardoise p-4 text-sm text-chalk/60">
-            Aucun match dans les prochaines 24 heures.
+            Aucun match dans les prochaines 48 heures.
           </p>
         )}
-        <ul className="space-y-2">
-          {prochains?.map((m) => (
-            <li key={m.id} className="flex items-center justify-between rounded-2xl border border-ligne bg-ardoise p-3 text-sm">
-              <span className="font-semibold">{m.home_team} <span className="text-chalk/40">vs</span> {m.away_team}</span>
-              <time className="font-mono text-xs text-chalk/60">
-                {new Date(m.kickoff).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: TZ })}
-              </time>
-            </li>
+        <div className="space-y-4">
+          {prochains?.map((m: any) => (
+            <MatchCard
+              key={m.id}
+              match={m}
+              prediction={predByMatch.get(m.id) ?? null}
+              userId={user.id}
+            />
           ))}
-        </ul>
+        </div>
       </section>
     </div>
   );
