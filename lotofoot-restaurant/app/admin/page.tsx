@@ -24,16 +24,14 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
   if (!profile?.is_admin) {
     return (
       <p className="rounded-2xl border border-ligne bg-ardoise p-6 text-center text-sm text-chalk/60">
-        Espace reserve a l'administrateur.
+        Espace reserve a administrateur.
       </p>
     );
   }
 
   const admin = createAdmin();
-
   const { data: authUsers } = await admin.auth.admin.listUsers();
   const emailMap = new Map((authUsers?.users ?? []).map((u: any) => [u.id, u.email]));
-
   const { data: users } = await admin.from('profiles').select('*').order('created_at');
   const { count: nbMatchs } = await admin.from('matches').select('*', { count: 'exact', head: true });
   const { count: nbParis } = await admin.from('predictions').select('*', { count: 'exact', head: true });
@@ -52,7 +50,7 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
     const admin = createAdmin();
     const key = process.env.API_FOOTBALL_KEY;
     if (!key) {
-      redirect('/admin?msg=' + encodeURIComponent('Cle API absente dans Vercel'));
+      redirect('/admin?msg=Cle+API+absente+dans+Vercel');
     }
 
     let totalImported = 0;
@@ -64,11 +62,11 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
           { headers: { 'x-apisports-key': key! }, cache: 'no-store' }
         );
         const json = await res.json();
-        const errTxt = json.errors && Object.keys(json.errors).length
-          ? JSON.stringify(json.errors) : '';
+        const hasError = json.errors && Object.keys(json.errors).length > 0;
+        const errTxt = hasError ? JSON.stringify(json.errors) : '';
         const fixtures = json.response ?? [];
-        diag = `saison ${season}: HTTP ${res.status}, ${fixtures.length} matchs` + (errTxt ? `, erreur: ${errTxt}` : '');
-        if (errTxt) break;
+        diag = 'saison ' + season + ': HTTP ' + res.status + ', ' + fixtures.length + ' matchs' + (errTxt ? ', erreur: ' + errTxt : '');
+        if (hasError) break;
         if (fixtures.length === 0) continue;
         for (const f of fixtures) {
           const home = f.score?.fulltime?.home ?? f.goals?.home ?? null;
@@ -90,5 +88,81 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
           totalImported++;
         }
         break;
-      } catch (e) {
-        diag = 'Erreur reseau: ' + String(e);
+      } catch (err) {
+        diag = 'Erreur reseau: ' + String(err);
+      }
+    }
+    revalidatePath('/matchs');
+    const msg = totalImported > 0
+      ? totalImported + ' matchs importes !'
+      : 'Aucun match. Detail: ' + diag;
+    redirect('/admin?msg=' + encodeURIComponent(msg));
+  }
+
+  return (
+    <div className="space-y-6">
+      <h1 className="font-display text-2xl">ADMIN</h1>
+
+      {searchParams.msg && (
+        <p className="rounded-xl border border-sang bg-sang/10 p-3 text-center font-mono text-sm">
+          {searchParams.msg}
+        </p>
+      )}
+
+      <section className="grid grid-cols-3 gap-3 text-center">
+        <div className="rounded-2xl border border-ligne bg-ardoise p-3">
+          <p className="font-mono text-2xl font-bold">{users?.length ?? 0}</p>
+          <p className="text-xs text-chalk/60">joueurs</p>
+        </div>
+        <div className="rounded-2xl border border-ligne bg-ardoise p-3">
+          <p className="font-mono text-2xl font-bold">{nbMatchs ?? 0}</p>
+          <p className="text-xs text-chalk/60">matchs</p>
+        </div>
+        <div className="rounded-2xl border border-ligne bg-ardoise p-3">
+          <p className="font-mono text-2xl font-bold">{nbParis ?? 0}</p>
+          <p className="text-xs text-chalk/60">paris</p>
+        </div>
+      </section>
+
+      <form action={syncNow}>
+        <button className="w-full rounded-xl bg-sang py-3 font-display text-sm">
+          IMPORTER LES MATCHS (COUPE DU MONDE)
+        </button>
+      </form>
+
+      <section>
+        <h2 className="mb-2 font-display text-sm">JOUEURS</h2>
+        <ul className="space-y-2">
+          {users?.map((u: any) => (
+            <li key={u.id} className="rounded-2xl border border-ligne bg-ardoise p-3 text-sm space-y-1">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold">
+                    {u.pseudo}
+                    {u.is_admin && ' ADMIN'}
+                    {u.is_suspended && <span className="text-sang-vif"> (suspendu)</span>}
+                  </p>
+                  <p className="font-mono text-xs text-chalk/50">
+                    {emailMap.get(u.id) ?? 'Email non disponible'}
+                  </p>
+                  <p className="font-mono text-xs text-chalk/40">
+                    Inscrit le {new Date(u.created_at).toLocaleDateString('fr-FR', {
+                      day: 'numeric', month: 'long', year: 'numeric'
+                    })}
+                  </p>
+                </div>
+                <form action={toggleSuspend}>
+                  <input type="hidden" name="id" value={u.id} />
+                  <input type="hidden" name="suspended" value={String(u.is_suspended)} />
+                  <button className="rounded-lg border border-ligne px-3 py-1 text-xs font-semibold">
+                    {u.is_suspended ? 'Reactiver' : 'Suspendre'}
+                  </button>
+                </form>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  );
+}
