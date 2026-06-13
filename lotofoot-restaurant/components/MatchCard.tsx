@@ -23,6 +23,8 @@ export interface PredictionRow {
   is_correct_result: boolean | null;
 }
 
+const TZ = 'Europe/Paris';
+
 function Countdown({ kickoff }: { kickoff: Date }) {
   const [ms, setMs] = useState(() => msUntilLock(kickoff));
   useEffect(() => {
@@ -69,7 +71,6 @@ export default function MatchCard({ match, prediction, userId }: {
   }
 
   function pickOutcome(o: Outcome) {
-    // Raccourci : choisir 1/N/2 propose un score type, modifiable ensuite.
     const presets: Record<Outcome, [number, number]> = { '1': [2, 1], 'N': [1, 1], '2': [1, 2] };
     const [h, a] = presets[o];
     setHome(h); setAway(a);
@@ -88,7 +89,7 @@ export default function MatchCard({ match, prediction, userId }: {
     <article className="rounded-2xl border border-ligne bg-ardoise p-4">
       <div className="mb-3 flex items-center justify-between">
         <time className="font-mono text-xs text-chalk/60">
-          {kickoff.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })} · {kickoff.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+          {kickoff.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', timeZone: TZ })} · {kickoff.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: TZ })}
         </time>
         {isLive && <span className="rounded-full bg-sang-vif px-2 py-0.5 font-mono text-xs font-bold animate-pulse">● LIVE</span>}
         {isOver && <span className="rounded-full border border-ligne px-2 py-0.5 font-mono text-xs text-chalk/60">TERMINÉ</span>}
@@ -103,7 +104,6 @@ export default function MatchCard({ match, prediction, userId }: {
         <span className="flex-1 truncate text-right font-semibold">{match.away_team}</span>
       </div>
 
-      {/* Grille Loto Foot 1 / N / 2 */}
       <div className="mb-3 flex items-center justify-center gap-4">
         {(['1', 'N', '2'] as Outcome[]).map((o) => (
           <button
@@ -118,37 +118,7 @@ export default function MatchCard({ match, prediction, userId }: {
         ))}
       </div>
 
-      {/* Score exact */}
       <div className="flex items-center justify-center gap-2">
         <label className="font-mono text-xs text-chalk/60">Score exact (3 pts) :</label>
         <input
-          type="number" min={0} max={20} inputMode="numeric" disabled={locked}
-          value={home} onChange={(e) => setHome(e.target.value === '' ? '' : Number(e.target.value))}
-          onBlur={onScoreBlur}
-          className="w-12 rounded-lg border border-ligne bg-pitch px-2 py-1 text-center font-mono font-bold disabled:opacity-40"
-          aria-label="Buts équipe domicile"
-        />
-        <span className="text-chalk/40">–</span>
-        <input
-          type="number" min={0} max={20} inputMode="numeric" disabled={locked}
-          value={away} onChange={(e) => setAway(e.target.value === '' ? '' : Number(e.target.value))}
-          onBlur={onScoreBlur}
-          className="w-12 rounded-lg border border-ligne bg-pitch px-2 py-1 text-center font-mono font-bold disabled:opacity-40"
-          aria-label="Buts équipe extérieure"
-        />
-      </div>
-
-      {saved && <p className="mt-2 text-center font-mono text-xs font-bold text-green-400">Pronostic enregistré ✓</p>}
-      {error && <p className="mt-2 text-center font-mono text-xs text-sang-vif">{error}</p>}
-
-      {/* Points gagnés */}
-      {prediction?.points !== null && prediction?.points !== undefined && isOver && (
-        <p className="mt-3 rounded-xl border border-ligne bg-pitch p-2 text-center font-mono text-sm">
-          {prediction.is_exact_score && <>🎯 Score exact ! <b className="text-sang-vif">+3 pts</b></>}
-          {!prediction.is_exact_score && prediction.is_correct_result && <>✓ Bon résultat <b>+1 pt</b></>}
-          {!prediction.is_correct_result && <>✗ Raté <b className="text-chalk/50">0 pt</b></>}
-        </p>
-      )}
-    </article>
-  );
-}
+          type="number" min={0} max={20}
