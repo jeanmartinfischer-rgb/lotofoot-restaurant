@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 
-// Coupe du Monde 2026 (id API-Football = 1). On essaie plusieurs saisons par sécurité.
 const WORLD_CUP_ID = 1;
 const SEASONS = [2026, 2025];
 
@@ -16,7 +15,7 @@ function mapStatus(short: string): string {
   return 'scheduled';
 }
 
-export default async function Admin() {
+export default async function Admin({ searchParams }: { searchParams: { msg?: string } }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
@@ -46,17 +45,22 @@ export default async function Admin() {
     'use server';
     const admin = createAdmin();
     const key = process.env.API_FOOTBALL_KEY;
-    if (!key) { revalidatePath('/admin'); return; }
+    if (!key) { redirect('/admin?msg=' + encodeURIComponent('❌ Clé API absente dans Vercel')); }
 
+    let totalImported = 0;
+    let diag = '';
     for (const season of SEASONS) {
       try {
         const res = await fetch(
           `https://v3.football.api-sports.io/fixtures?league=${WORLD_CUP_ID}&season=${season}`,
-          { headers: { 'x-apisports-key': key }, cache: 'no-store' }
+          { headers: { 'x-apisports-key': key! }, cache: 'no-store' }
         );
-        if (!res.ok) continue;
         const json = await res.json();
+        const errTxt = json.errors && Object.keys(json.errors).length
+          ? JSON.stringify(json.errors) : '';
         const fixtures = json.response ?? [];
+        diag = `saison ${season}: HTTP ${res.status}, ${fixtures.length} matchs` + (errTxt ? `, erreur API: ${errTxt}` : '');
+        if (errTxt) break;
         if (fixtures.length === 0) continue;
         for (const f of fixtures) {
           const home = f.score?.fulltime?.home ?? f.goals?.home ?? null;
@@ -75,17 +79,27 @@ export default async function Admin() {
             },
             { onConflict: 'api_fixture_id' }
           );
+          totalImported++;
         }
-        break; // saison trouvée, on s'arrête
-      } catch {}
+        break;
+      } catch (e) {
+        diag = 'Erreur réseau: ' + String(e);
+      }
     }
-    revalidatePath('/admin');
     revalidatePath('/matchs');
+    const msg = totalImported > 0 ? `✓ ${totalImported} matchs importés !` : `Aucun match. Détail → ${diag}`;
+    redirect('/admin?msg=' + encodeURIComponent(msg));
   }
 
   return (
     <div className="space-y-6">
       <h1 className="font-display text-2xl">ADMIN</h1>
+
+      {searchParams.msg && (
+        <p className="rounded-xl border border-sang bg-sang/10 p-3 text-center font-mono text-sm">
+          {searchParams.msg}
+        </p>
+      )}
 
       <section className="grid grid-cols-3 gap-3 text-center">
         <div className="rounded-2xl border border-ligne bg-ardoise p-3">
