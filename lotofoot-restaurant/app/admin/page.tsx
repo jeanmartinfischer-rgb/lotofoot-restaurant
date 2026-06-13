@@ -4,6 +4,16 @@ import { revalidatePath } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 
+const LEAGUES = [61, 62, 39, 140, 78, 2, 3, 1, 4];
+
+function mapStatus(short: string): string {
+  if (['1H', '2H', 'ET', 'LIVE'].includes(short)) return 'live';
+  if (short === 'HT') return 'halftime';
+  if (['FT', 'AET', 'PEN'].includes(short)) return 'finished';
+  if (['PST', 'CANC', 'ABD'].includes(short)) return 'postponed';
+  return 'scheduled';
+}
+
 export default async function Admin() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -32,10 +42,41 @@ export default async function Admin() {
 
   async function syncNow() {
     'use server';
-    await fetch(`${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/api/sync-matches`, {
-      headers: { authorization: `Bearer ${process.env.CRON_SECRET}` },
-    });
+    const admin = createAdmin();
+    const season = new Date().getMonth() >= 6 ? new Date().getFullYear() : new Date().getFullYear() - 1;
+    const key = process.env.API_FOOTBALL_KEY;
+    if (!key) { revalidatePath('/admin'); return; }
+
+    for (const league of LEAGUES) {
+      try {
+        const res = await fetch(
+          `https://v3.football.api-sports.io/fixtures?league=${league}&season=${season}&next=15`,
+          { headers: { 'x-apisports-key': key }, cache: 'no-store' }
+        );
+        if (!res.ok) continue;
+        const json = await res.json();
+        for (const f of json.response ?? []) {
+          const home = f.score?.fulltime?.home ?? f.goals?.home ?? null;
+          const away = f.score?.fulltime?.away ?? f.goals?.away ?? null;
+          await admin.from('matches').upsert(
+            {
+              api_fixture_id: f.fixture.id,
+              home_team: f.teams.home.name,
+              away_team: f.teams.away.name,
+              home_logo: f.teams.home.logo,
+              away_logo: f.teams.away.logo,
+              kickoff: f.fixture.date,
+              status: mapStatus(f.fixture.status.short),
+              home_score: home,
+              away_score: away,
+            },
+            { onConflict: 'api_fixture_id' }
+          );
+        }
+      } catch {}
+    }
     revalidatePath('/admin');
+    revalidatePath('/matchs');
   }
 
   return (
