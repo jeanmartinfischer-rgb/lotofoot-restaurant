@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 
-const LEAGUES = [61, 62, 39, 140, 78, 2, 3, 1, 4];
+const LEAGUES = const LEAGUES = [1];
 
 function mapStatus(short: string): string {
   if (['1H', '2H', 'ET', 'LIVE'].includes(short)) return 'live';
@@ -50,7 +50,7 @@ export default async function Admin() {
     for (const league of LEAGUES) {
       try {
         const res = await fetch(
-          `https://v3.football.api-sports.io/fixtures?league=${league}&season=${season}&next=15`,
+          `https://v3.football.api-sports.io/fixtures?league=${league}&season=2026`,
           { headers: { 'x-apisports-key': key }, cache: 'no-store' }
         );
         if (!res.ok) continue;
