@@ -17,7 +17,7 @@ body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.70);
+  background: rgba(0, 0, 0, 0.45);
   z-index: 0;
   pointer-events: none;
 }
@@ -27,12 +27,27 @@ main, header, nav {
   z-index: 1;
 }
 
-/* Effet verre depoli pour toutes les cartes */
+/* Effet verre premium avec teinte doree */
 .glass {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(10, 8, 4, 0.45);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(212, 175, 55, 0.20);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(212, 175, 55, 0.15);
+}
+
+/* Variante plus lumineuse pour les cartes importantes */
+.glass-gold {
+  background: rgba(15, 10, 2, 0.50);
+  backdrop-filter: blur(20px) saturate(200%);
+  -webkit-backdrop-filter: blur(20px) saturate(200%);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(212, 175, 55, 0.08),
+    inset 0 1px 0 rgba(212, 175, 55, 0.20);
 }
 
 .pick {
@@ -41,7 +56,8 @@ main, header, nav {
          active:scale-90;
 }
 .pick--on {
-  @apply border-sang bg-sang text-chalk shadow-[0_0_0_4px_rgba(142,27,34,0.25)];
+  @apply border-sang bg-sang text-chalk;
+  box-shadow: 0 0 0 4px rgba(142,27,34,0.30), 0 0 20px rgba(142,27,34,0.20);
 }
 .pick:disabled { @apply opacity-40; }
 
