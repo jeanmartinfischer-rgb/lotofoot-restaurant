@@ -4,10 +4,30 @@
 @tailwind utilities;
 
 body {
-  @apply bg-pitch text-chalk font-body antialiased;
+  @apply text-chalk font-body antialiased;
+  background-color: #0B0B0D;
+  background-image: url('/bg.png');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  position: relative;
 }
 
-/* Pastille de la grille Loto Foot : 1 / N / 2 */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 0;
+  pointer-events: none;
+}
+
+main, header, nav {
+  position: relative;
+  z-index: 1;
+}
+
 .pick {
   @apply flex h-12 w-12 items-center justify-center rounded-full border-2 border-ligne
          font-mono text-lg font-bold text-chalk/60 transition-all duration-150
