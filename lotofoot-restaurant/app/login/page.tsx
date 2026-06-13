@@ -11,6 +11,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [pseudo, setPseudo] = useState('');
+  const [showPwd, setShowPwd] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -73,14 +74,23 @@ export default function Login() {
         className="w-full rounded-xl border border-ligne bg-ardoise px-4 py-3"
       />
 
-      <input
-        type="password"
-        placeholder="Mot de passe"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        autoComplete="current-password"
-        className="w-full rounded-xl border border-ligne bg-ardoise px-4 py-3"
-      />
+      <div className="relative">
+        <input
+          type={showPwd ? 'text' : 'password'}
+          placeholder="Mot de passe"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="current-password"
+          className="w-full rounded-xl border border-ligne bg-ardoise px-4 py-3 pr-12"
+        />
+        <button
+          type="button"
+          onClick={() => setShowPwd(!showPwd)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-chalk/50 hover:text-chalk text-lg"
+        >
+          {showPwd ? '🙈' : '👁'}
+        </button>
+      </div>
 
       {error && (
         <p className="text-center text-sm text-sang-vif">{error}</p>
