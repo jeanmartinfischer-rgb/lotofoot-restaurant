@@ -8,10 +8,10 @@ const WORLD_CUP_ID = 1;
 const SEASONS = [2026, 2025];
 
 function mapStatus(short: string): string {
-  if (['1H', '2H', 'ET', 'LIVE'].includes(short)) return 'live';
+  if (['1H', '2H', 'ET', 'LIVE', 'P', 'BT'].includes(short)) return 'live';
   if (short === 'HT') return 'halftime';
   if (['FT', 'AET', 'PEN'].includes(short)) return 'finished';
-  if (['PST', 'CANC', 'ABD'].includes(short)) return 'postponed';
+  if (['PST', 'CANC', 'ABD', 'SUSP', 'INT'].includes(short)) return 'postponed';
   return 'scheduled';
 }
 
@@ -68,8 +68,8 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
           await admin.from('matches').upsert(
             {
               api_fixture_id: f.fixture.id,
-              home_team: f.teams.home.name,
-              away_team: f.teams.away.name,
+              home_team: f.teams.home.name ?? 'À déterminer',
+              away_team: f.teams.away.name ?? 'À déterminer',
               home_logo: f.teams.home.logo,
               away_logo: f.teams.away.logo,
               kickoff: f.fixture.date,
