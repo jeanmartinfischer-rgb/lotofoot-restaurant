@@ -4,6 +4,9 @@ import { revalidatePath } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 
+// Ligues importées (ids API-Football) :
+//  61 = Ligue 1 · 62 = Ligue 2 · 39 = Premier League · 140 = Liga
+//  78 = Bundesliga · 2 = Champions League · 3 = Europa League · 1 = Coupe du Monde · 4 = Euro
 const LEAGUES = [61, 62, 39, 140, 78, 2, 3, 1, 4];
 
 function mapStatus(short: string): string {
@@ -40,6 +43,7 @@ export default async function Admin() {
     revalidatePath('/admin');
   }
 
+  // Import des matchs directement dans la Server Action (plus de fetch interne).
   async function syncNow() {
     'use server';
     const admin = createAdmin();
@@ -73,7 +77,7 @@ export default async function Admin() {
             { onConflict: 'api_fixture_id' }
           );
         }
-      } catch {}
+      } catch { /* ligue ignorée si l'API échoue */ }
     }
     revalidatePath('/admin');
     revalidatePath('/matchs');
