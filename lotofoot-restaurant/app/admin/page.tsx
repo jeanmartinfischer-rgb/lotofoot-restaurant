@@ -4,7 +4,9 @@ import { revalidatePath } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 
-const LEAGUES = const LEAGUES = [1];
+// Coupe du Monde 2026 (id API-Football = 1). On essaie plusieurs saisons par sécurité.
+const WORLD_CUP_ID = 1;
+const SEASONS = [2026, 2025];
 
 function mapStatus(short: string): string {
   if (['1H', '2H', 'ET', 'LIVE'].includes(short)) return 'live';
@@ -43,19 +45,20 @@ export default async function Admin() {
   async function syncNow() {
     'use server';
     const admin = createAdmin();
-    const season = new Date().getMonth() >= 6 ? new Date().getFullYear() : new Date().getFullYear() - 1;
     const key = process.env.API_FOOTBALL_KEY;
     if (!key) { revalidatePath('/admin'); return; }
 
-    for (const league of LEAGUES) {
+    for (const season of SEASONS) {
       try {
         const res = await fetch(
-          `https://v3.football.api-sports.io/fixtures?league=${league}&season=2026`,
+          `https://v3.football.api-sports.io/fixtures?league=${WORLD_CUP_ID}&season=${season}`,
           { headers: { 'x-apisports-key': key }, cache: 'no-store' }
         );
         if (!res.ok) continue;
         const json = await res.json();
-        for (const f of json.response ?? []) {
+        const fixtures = json.response ?? [];
+        if (fixtures.length === 0) continue;
+        for (const f of fixtures) {
           const home = f.score?.fulltime?.home ?? f.goals?.home ?? null;
           const away = f.score?.fulltime?.away ?? f.goals?.away ?? null;
           await admin.from('matches').upsert(
@@ -73,6 +76,7 @@ export default async function Admin() {
             { onConflict: 'api_fixture_id' }
           );
         }
+        break; // saison trouvée, on s'arrête
       } catch {}
     }
     revalidatePath('/admin');
@@ -100,7 +104,7 @@ export default async function Admin() {
 
       <form action={syncNow}>
         <button className="w-full rounded-xl bg-sang py-3 font-display text-sm">
-          IMPORTER / METTRE À JOUR LES MATCHS
+          IMPORTER LES MATCHS (COUPE DU MONDE)
         </button>
       </form>
 
