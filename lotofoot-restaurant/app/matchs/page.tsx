@@ -1,27 +1,21 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
 import MatchCard, { type MatchRow, type PredictionRow } from '@/components/MatchCard';
-
 export const dynamic = 'force-dynamic';
-
 export default async function Matchs() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
-
   const since = new Date(Date.now() - 3 * 24 * 3600_000).toISOString();
   const { data: matches } = await supabase
     .from('matches').select('*')
     .gte('kickoff', since)
     .order('kickoff')
     .limit(60);
-
   const { data: preds } = await supabase
     .from('predictions').select('*')
     .eq('user_id', user.id);
-
   const predByMatch = new Map<number, PredictionRow>((preds ?? []).map((p) => [p.match_id, p]));
-
   return (
     <div className="space-y-4">
       <h1 className="font-display text-2xl">MES PARIS</h1>
@@ -33,9 +27,11 @@ export default async function Matchs() {
           Aucun match importé pour l’instant. L’administrateur peut lancer l’import depuis l’espace Admin.
         </p>
       )}
-      {(matches as MatchRow[] | null)?.map((m) => (
-        <MatchCard key={m.id} match={m} prediction={predByMatch.get(m.id) ?? null} userId={user.id} />
-      ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
+        {(matches as MatchRow[] | null)?.map((m) => (
+          <MatchCard key={m.id} match={m} prediction={predByMatch.get(m.id) ?? null} userId={user.id} />
+        ))}
+      </div>
     </div>
   );
 }
