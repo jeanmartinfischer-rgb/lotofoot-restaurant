@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase-client';
 import Avatar from '@/components/Avatar';
 
@@ -216,9 +217,10 @@ export default function DefiClient({
               const p = PODIUM[rank];
               const isMe = r.id === userId;
               return (
-                <div
+                <Link
                   key={r.id}
-                  className={'flex items-center justify-between rounded-xl px-3 py-2 text-sm border ' + (p ? 'bg-pitch' : 'border-transparent') + (isMe ? ' text-sang-vif font-bold' : ' text-chalk/80')}
+                  href={'/profil/' + r.id}
+                  className={'flex items-center justify-between rounded-xl px-3 py-2 text-sm border transition hover:border-sang-vif ' + (p ? 'bg-pitch' : 'border-transparent') + (isMe ? ' text-sang-vif font-bold' : ' text-chalk/80')}
                   style={p ? { borderColor: p.color, boxShadow: '0 0 8px 0 ' + p.glow } : undefined}
                 >
                   <span className="flex items-center gap-2 min-w-0">
@@ -231,7 +233,7 @@ export default function DefiClient({
                   <span className="font-mono text-xs shrink-0">
                     {r.streak_current} <span className="text-chalk/30">/ {r.streak_best}</span>
                   </span>
-                </div>
+                </Link>
               );
             })}
           </div>
