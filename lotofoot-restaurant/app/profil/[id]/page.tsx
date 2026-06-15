@@ -191,17 +191,6 @@ export default async function Profil({ params }: { params: { id: string } }) {
         </section>
       )}
 
-      {matchesUpcoming.length > 0 && (
-        <section className="rounded-2xl border border-ligne bg-ardoise p-4">
-          <h2 className="font-display text-sm mb-3">
-            A VENIR — {matchesUpcoming.filter((m: any) => predByMatch.has(m.id)).length}/{matchesUpcoming.length} paris faits
-          </h2>
-          <div className="space-y-2">
-            {matchesUpcoming.map((m: any) => <MatchLine key={m.id} match={m} />)}
-          </div>
-        </section>
-      )}
-
       {matchesFinished.length > 0 && (
         <section className="rounded-2xl border border-ligne bg-ardoise p-4">
           <h2 className="font-display text-sm mb-3">
@@ -209,6 +198,17 @@ export default async function Profil({ params }: { params: { id: string } }) {
           </h2>
           <div className="space-y-2">
             {[...matchesFinished].reverse().map((m: any) => <MatchLine key={m.id} match={m} />)}
+          </div>
+        </section>
+      )}
+
+      {matchesUpcoming.length > 0 && (
+        <section className="rounded-2xl border border-ligne bg-ardoise p-4">
+          <h2 className="font-display text-sm mb-3">
+            A VENIR — {matchesUpcoming.filter((m: any) => predByMatch.has(m.id)).length}/{matchesUpcoming.length} paris faits
+          </h2>
+          <div className="space-y-2">
+            {matchesUpcoming.map((m: any) => <MatchLine key={m.id} match={m} />)}
           </div>
         </section>
       )}
