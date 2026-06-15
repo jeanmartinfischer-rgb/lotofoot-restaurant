@@ -35,6 +35,7 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
   const { data: users } = await admin.from('profiles').select('*').order('created_at');
   const { count: nbMatchs } = await admin.from('matches').select('*', { count: 'exact', head: true });
   const { count: nbParis } = await admin.from('predictions').select('*', { count: 'exact', head: true });
+  const { count: nbEvents } = await admin.from('match_events').select('*', { count: 'exact', head: true });
 
   async function toggleSuspend(formData: FormData) {
     'use server';
@@ -58,7 +59,7 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
     for (const season of SEASONS) {
       try {
         const res = await fetch(
-          `https://v3.football.api-sports.io/fixtures?league=${WORLD_CUP_ID}&season=${season}`,
+          'https://v3.football.api-sports.io/fixtures?league=' + WORLD_CUP_ID + '&season=' + season,
           { headers: { 'x-apisports-key': key! }, cache: 'no-store' }
         );
         const json = await res.json();
@@ -99,6 +100,78 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
     redirect('/admin?msg=' + encodeURIComponent(msg));
   }
 
+  async function importEvents() {
+    'use server';
+    const admin = createAdmin();
+    const key = process.env.API_FOOTBALL_KEY;
+    if (!key) {
+      redirect('/admin?msg=Cle+API+absente');
+    }
+
+    const { data: finishedMatches } = await admin
+      .from('matches')
+      .select('id, api_fixture_id')
+      .eq('status', 'finished')
+      .not('api_fixture_id', 'is', null);
+
+    let imported = 0;
+    for (const match of finishedMatches ?? []) {
+      const { count } = await admin
+        .from('match_events')
+        .select('*', { count: 'exact', head: true })
+        .eq('match_id', match.id);
+      if (count && count > 0) continue;
+
+      try {
+        const res = await fetch(
+          'https://v3.football.api-sports.io/fixtures/events?fixture=' + match.api_fixture_id,
+          { headers: { 'x-apisports-key': key! }, cache: 'no-store' }
+        );
+        const json = await res.json();
+        for (const e of json.response ?? []) {
+          await admin.from('match_events').insert({
+            match_id: match.id,
+            minute: e.time?.elapsed ?? null,
+            extra_minute: e.time?.extra ?? null,
+            team: e.team?.name ?? null,
+            player: e.player?.name ?? null,
+            assist: e.assist?.name ?? null,
+            event_type: e.type ?? null,
+            detail: e.detail ?? null,
+          });
+        }
+        imported++;
+      } catch {}
+    }
+    revalidatePath('/admin');
+    redirect('/admin?msg=' + encodeURIComponent(imported + ' matchs avec evenements importes !'));
+  }
+
+  async function recalcPoints() {
+    'use server';
+    const admin = createAdmin();
+    await admin.rpc('exec_sql', {
+      sql: `
+        UPDATE public.predictions p
+        SET
+          points = CASE
+            WHEN p.pred_home = m.home_score AND p.pred_away = m.away_score THEN 3
+            WHEN sign(p.pred_home - p.pred_away) = sign(m.home_score - m.away_score) THEN 1
+            ELSE 0
+          END,
+          is_exact_score = (p.pred_home = m.home_score AND p.pred_away = m.away_score),
+          is_correct_result = (sign(p.pred_home - p.pred_away) = sign(m.home_score - m.away_score)),
+          updated_at = now()
+        FROM public.matches m
+        WHERE p.match_id = m.id
+          AND m.status = 'finished'
+          AND m.home_score IS NOT NULL;
+      `
+    });
+    revalidatePath('/classement');
+    redirect('/admin?msg=Points+recalcules+!');
+  }
+
   return (
     <div className="space-y-4">
       <h1 className="font-display text-2xl">ADMIN</h1>
@@ -109,24 +182,34 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
         </p>
       )}
 
-      <section className="grid grid-cols-3 gap-3 text-center">
+      <section className="grid grid-cols-4 gap-2 text-center">
         <div className="rounded-2xl border border-ligne bg-ardoise p-3">
-          <p className="font-mono text-2xl font-bold">{users?.length ?? 0}</p>
+          <p className="font-mono text-xl font-bold">{users?.length ?? 0}</p>
           <p className="text-xs text-chalk/60">joueurs</p>
         </div>
         <div className="rounded-2xl border border-ligne bg-ardoise p-3">
-          <p className="font-mono text-2xl font-bold">{nbMatchs ?? 0}</p>
+          <p className="font-mono text-xl font-bold">{nbMatchs ?? 0}</p>
           <p className="text-xs text-chalk/60">matchs</p>
         </div>
         <div className="rounded-2xl border border-ligne bg-ardoise p-3">
-          <p className="font-mono text-2xl font-bold">{nbParis ?? 0}</p>
+          <p className="font-mono text-xl font-bold">{nbParis ?? 0}</p>
           <p className="text-xs text-chalk/60">paris</p>
+        </div>
+        <div className="rounded-2xl border border-ligne bg-ardoise p-3">
+          <p className="font-mono text-xl font-bold">{nbEvents ?? 0}</p>
+          <p className="text-xs text-chalk/60">events</p>
         </div>
       </section>
 
       <form action={syncNow}>
         <button className="w-full rounded-xl bg-sang py-3 font-display text-sm">
           IMPORTER LES MATCHS (COUPE DU MONDE)
+        </button>
+      </form>
+
+      <form action={importEvents}>
+        <button className="w-full rounded-xl border border-chalk/20 py-3 font-display text-sm text-chalk/70">
+          IMPORTER LES EVENEMENTS (BUTEURS, CARTONS...)
         </button>
       </form>
 
