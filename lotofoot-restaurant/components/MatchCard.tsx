@@ -213,10 +213,7 @@ export default function MatchCard({ match, prediction, userId }: {
       {error && <p className="mt-2 text-center font-mono text-xs text-sang-vif">{error}</p>}
 
       {isOver && (
-        
-          href={'/matchs/' + match.id}
-          className="mt-3 block w-full rounded-xl border border-ligne py-2 text-center font-mono text-xs text-chalk/60 hover:text-chalk hover:border-chalk/40"
-        >
+        <a href={'/matchs/' + match.id} className="mt-3 block w-full rounded-xl border border-ligne py-2 text-center font-mono text-xs text-chalk/60 hover:text-chalk hover:border-chalk/40">
           Voir le resume du match
         </a>
       )}
