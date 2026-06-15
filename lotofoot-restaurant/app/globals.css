@@ -2,7 +2,6 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
 body {
   @apply text-chalk font-body antialiased;
   background-color: #0B0B0D;
@@ -12,7 +11,6 @@ body {
   background-attachment: fixed;
   background-repeat: no-repeat;
 }
-
 body::before {
   content: '';
   position: fixed;
@@ -21,12 +19,10 @@ body::before {
   z-index: 0;
   pointer-events: none;
 }
-
 main, header, nav {
   position: relative;
   z-index: 1;
 }
-
 .glass {
   background: rgba(10, 8, 4, 0.45);
   backdrop-filter: blur(16px) saturate(180%);
@@ -34,7 +30,6 @@ main, header, nav {
   border: 1px solid rgba(212, 175, 55, 0.20);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(212, 175, 55, 0.15);
 }
-
 .glass-gold {
   background: rgba(15, 10, 2, 0.50);
   backdrop-filter: blur(20px) saturate(200%);
@@ -42,7 +37,6 @@ main, header, nav {
   border: 1px solid rgba(212, 175, 55, 0.35);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(212, 175, 55, 0.20);
 }
-
 .pick {
   @apply flex h-12 w-12 items-center justify-center rounded-full border-2 border-ligne
          font-mono text-lg font-bold text-chalk/60 transition-all duration-150
@@ -53,6 +47,14 @@ main, header, nav {
   box-shadow: 0 0 0 4px rgba(142,27,34,0.30), 0 0 20px rgba(142,27,34,0.20);
 }
 .pick:disabled { @apply opacity-40; }
+
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-enter {
+  animation: pageEnter 0.4s ease-out;
+}
 
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
