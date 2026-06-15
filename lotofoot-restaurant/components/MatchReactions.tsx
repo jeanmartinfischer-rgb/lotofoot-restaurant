@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase-client';
 
 const EMOJIS = ['\u26BD', '\uD83D\uDD25', '\uD83D\uDE31', '\uD83D\uDE05', '\uD83D\uDC4F', '\uD83E\uDD23'];
@@ -14,6 +14,8 @@ export default function MatchReactions({ matchId, userId }: { matchId: number; u
   const [showComments, setShowComments] = useState(false);
   const [loading, setLoading] = useState(false);
   const [openTip, setOpenTip] = useState<string | null>(null);
+  const longPress = useRef(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     loadReactions();
@@ -66,6 +68,28 @@ export default function MatchReactions({ matchId, userId }: { matchId: number; u
     loadReactions();
   }
 
+  function startPress(emoji: string, hasNames: boolean) {
+    longPress.current = false;
+    if (!hasNames) return;
+    timer.current = setTimeout(() => {
+      longPress.current = true;
+      setOpenTip(emoji);
+    }, 450);
+  }
+
+  function endPress(emoji: string) {
+    if (timer.current) clearTimeout(timer.current);
+    if (longPress.current) {
+      longPress.current = false;
+      return;
+    }
+    toggleReaction(emoji);
+  }
+
+  function cancelPress() {
+    if (timer.current) clearTimeout(timer.current);
+  }
+
   async function addComment() {
     if (!newComment.trim()) return;
     setLoading(true);
@@ -95,10 +119,12 @@ export default function MatchReactions({ matchId, userId }: { matchId: number; u
           return (
             <div key={emoji} className="relative">
               <button
-                onClick={() => toggleReaction(emoji)}
+                onPointerDown={() => startPress(emoji, !!hasNames)}
+                onPointerUp={() => endPress(emoji)}
+                onPointerLeave={cancelPress}
                 onMouseEnter={() => hasNames && setOpenTip(emoji)}
                 onMouseLeave={() => setOpenTip(null)}
-                className={'flex items-center gap-1 rounded-full px-2 py-1 text-sm border transition-all ' +
+                className={'flex items-center gap-1 rounded-full px-2 py-1 text-sm border transition-all select-none ' +
                   (r?.userReacted
                     ? 'bg-sang border-sang text-chalk'
                     : 'bg-ardoise border-ligne text-chalk/70 hover:border-chalk/40')}
@@ -108,18 +134,11 @@ export default function MatchReactions({ matchId, userId }: { matchId: number; u
                   <span className="font-mono text-xs">{r.count}</span>
                 )}
               </button>
-              {hasNames && (
-                <button
-                  type="button"
-                  onClick={() => setOpenTip(openTip === emoji ? null : emoji)}
-                  className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-chalk/20 text-[8px] text-chalk/70 md:hidden"
-                  aria-label="Voir qui a reagi"
-                >
-                  i
-                </button>
-              )}
               {openTip === emoji && hasNames && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-20 whitespace-nowrap rounded-lg border border-ligne bg-pitch px-3 py-2 text-xs text-chalk shadow-lg">
+                <div
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-20 whitespace-nowrap rounded-lg border border-ligne bg-pitch px-3 py-2 text-xs text-chalk shadow-lg"
+                  onClick={() => setOpenTip(null)}
+                >
                   <p className="font-mono text-chalk/50 mb-1">{emoji} {r.count} reaction{r.count > 1 ? 's' : ''}</p>
                   {r.names.map((n, i) => (
                     <p key={i} className="text-chalk/90">{n}</p>
