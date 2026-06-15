@@ -38,9 +38,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/classement" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-chalk/70 hover:text-chalk hover:bg-ardoise whitespace-nowrap transition-colors">
                 Classement
               </Link>
-              <Link href="/classement-pdf" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-chalk/70 hover:text-chalk hover:bg-ardoise whitespace-nowrap transition-colors">
-                Export PDF
-              </Link>
               <Link href="/stats" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-chalk/70 hover:text-chalk hover:bg-ardoise whitespace-nowrap transition-colors">
                 Mes stats
               </Link>
