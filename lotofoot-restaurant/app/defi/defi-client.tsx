@@ -31,6 +31,12 @@ type RankRow = {
   streak_best: number;
 };
 
+const PODIUM: Record<number, { color: string; glow: string }> = {
+  1: { color: '#F5C542', glow: 'rgba(245,197,66,0.45)' },
+  2: { color: '#C8D0DA', glow: 'rgba(200,208,218,0.4)' },
+  3: { color: '#CD7F32', glow: 'rgba(205,127,50,0.4)' },
+};
+
 export default function DefiClient({
   userId,
   pseudo,
@@ -79,15 +85,28 @@ export default function DefiClient({
 
   return (
     <div className="space-y-4">
+      <style>{`
+        @keyframes streakPulse {
+          0%, 100% { box-shadow: 0 0 8px 0 rgba(194,39,47,0.3); }
+          50% { box-shadow: 0 0 20px 2px rgba(194,39,47,0.5); }
+        }
+        .streak-card { animation: streakPulse 2.4s ease-in-out infinite; }
+        @keyframes flameWiggle {
+          0%, 100% { transform: rotate(-6deg) scale(1); }
+          50% { transform: rotate(6deg) scale(1.12); }
+        }
+        .flame { display: inline-block; animation: flameWiggle 1.4s ease-in-out infinite; }
+      `}</style>
+
       <div className="flex items-baseline justify-between">
         <h1 className="font-display text-2xl">DEFI EXPRESS</h1>
         <p className="font-mono text-xs text-chalk/50">{pseudo}</p>
       </div>
 
       <section className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl border border-sang bg-pitch p-4 text-center">
+        <div className={'rounded-2xl border border-sang bg-pitch p-4 text-center ' + (streakCurrent > 0 ? 'streak-card' : '')}>
           <p className="font-mono text-3xl font-bold text-sang-vif">
-            {streakCurrent} <span className="text-xl">🔥</span>
+            {streakCurrent} <span className="text-xl flame">{String.fromCodePoint(0x1F525)}</span>
           </p>
           <p className="text-xs text-chalk/60 mt-1">serie en cours</p>
         </div>
@@ -99,7 +118,7 @@ export default function DefiClient({
 
       {!challenge && (
         <section className="rounded-2xl border border-ligne bg-ardoise p-6 text-center">
-          <p className="text-3xl mb-2">😴</p>
+          <p className="text-3xl mb-2">{String.fromCodePoint(0x1F634)}</p>
           <p className="text-sm text-chalk/70">Aucun defi aujourd'hui.</p>
           <p className="text-xs text-chalk/40 mt-1">Reviens un jour de match !</p>
         </section>
@@ -114,7 +133,10 @@ export default function DefiClient({
             ) : locked ? (
               <span className="font-mono text-xs text-yellow-400">verrouille</span>
             ) : (
-              <span className="font-mono text-xs text-green-400">ouvert</span>
+              <span className="font-mono text-xs text-green-400 flex items-center gap-1">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+                ouvert
+              </span>
             )}
           </div>
 
@@ -139,14 +161,14 @@ export default function DefiClient({
                   className={
                     'rounded-xl border px-4 py-3 font-mono text-sm transition ' +
                     cls +
-                    (locked ? ' cursor-default' : ' hover:border-sang-vif')
+                    (locked ? ' cursor-default' : ' hover:border-sang-vif active:scale-95')
                   }
                 >
                   {opt}
                   {isMine && !challenge.resolved && (
                     <span className="ml-2 text-xs text-chalk/50">(ton choix)</span>
                   )}
-                  {isCorrect && <span className="ml-2 text-xs">✓</span>}
+                  {isCorrect && <span className="ml-2 text-xs">{String.fromCharCode(10003)}</span>}
                 </button>
               );
             })}
@@ -158,7 +180,7 @@ export default function DefiClient({
             <div className="mt-4 rounded-xl border border-ligne bg-ardoise p-3 text-center">
               {myAnswer.is_correct ? (
                 <p className="font-mono text-sm text-green-400">
-                  Gagne ! Serie +1 🔥
+                  Gagne ! Serie +1 <span className="flame inline-block">{String.fromCodePoint(0x1F525)}</span>
                 </p>
               ) : (
                 <p className="font-mono text-sm text-chalk/50">
@@ -185,25 +207,30 @@ export default function DefiClient({
 
       {ranking.length > 0 && (
         <section className="rounded-2xl border border-ligne bg-ardoise p-4">
-          <h2 className="font-display text-sm mb-3">SERIES EN COURS 🔥</h2>
+          <h2 className="font-display text-sm mb-3">SERIES EN COURS <span className="flame inline-block">{String.fromCodePoint(0x1F525)}</span></h2>
           <div className="space-y-2">
-            {ranking.map((r, i) => (
-              <div
-                key={r.id}
-                className={
-                  'flex items-center justify-between text-sm ' +
-                  (r.id === userId ? 'text-sang-vif font-bold' : 'text-chalk/80')
-                }
-              >
-                <span className="flex items-center gap-2">
-                  <span className="font-mono text-xs text-chalk/40 w-5">#{i + 1}</span>
-                  <span className="truncate">{r.pseudo}</span>
-                </span>
-                <span className="font-mono text-xs">
-                  {r.streak_current} <span className="text-chalk/30">/ {r.streak_best}</span>
-                </span>
-              </div>
-            ))}
+            {ranking.map((r, i) => {
+              const rank = i + 1;
+              const p = PODIUM[rank];
+              const isMe = r.id === userId;
+              return (
+                <div
+                  key={r.id}
+                  className={'flex items-center justify-between rounded-xl px-3 py-2 text-sm border ' + (p ? 'bg-pitch' : 'border-transparent') + (isMe ? ' text-sang-vif font-bold' : ' text-chalk/80')}
+                  style={p ? { borderColor: p.color, boxShadow: '0 0 8px 0 ' + p.glow } : undefined}
+                >
+                  <span className="flex items-center gap-2 min-w-0">
+                    <span className="font-mono text-xs w-6 text-center">
+                      {rank === 1 ? String.fromCodePoint(0x1F947) : rank === 2 ? String.fromCodePoint(0x1F948) : rank === 3 ? String.fromCodePoint(0x1F949) : '#' + rank}
+                    </span>
+                    <span className="truncate">{r.pseudo}</span>
+                  </span>
+                  <span className="font-mono text-xs shrink-0">
+                    {r.streak_current} <span className="text-chalk/30">/ {r.streak_best}</span>
+                  </span>
+                </div>
+              );
+            })}
           </div>
           <p className="mt-3 font-mono text-xs text-chalk/30 text-center">
             serie actuelle / record
