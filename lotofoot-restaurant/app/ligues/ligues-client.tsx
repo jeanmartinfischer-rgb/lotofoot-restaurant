@@ -75,6 +75,21 @@ export default function LiguesClient({
     router.refresh();
   }
 
+  async function supprimer(ligue: Ligue) {
+    if (busy) return;
+    const ok = window.confirm('Supprimer la ligue "' + ligue.name + '" ? Cette action est definitive.');
+    if (!ok) return;
+    setBusy(true);
+    setMsg(null);
+    const { error } = await supabase.from('leagues').delete().eq('id', ligue.id);
+    setBusy(false);
+    if (error) {
+      setMsg('Suppression impossible.');
+      return;
+    }
+    router.refresh();
+  }
+
   return (
     <div className="space-y-4">
       <h1 className="font-display text-2xl">LIGUES PRIVEES</h1>
@@ -87,21 +102,32 @@ export default function LiguesClient({
         ) : (
           <div className="space-y-2">
             {mesLigues.map((l) => (
-              <Link
+              <div
                 key={l.id}
-                href={'/ligues/' + l.id}
-                className="flex items-center justify-between rounded-xl border border-ligne bg-pitch px-4 py-3 hover:border-sang-vif transition-colors"
+                className="flex items-center justify-between rounded-xl border border-ligne bg-pitch px-4 py-3"
               >
-                <span className="flex items-center gap-2">
-                  <span className="text-sm text-chalk">{l.name}</span>
+                <Link href={'/ligues/' + l.id} className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80">
+                  <span className="text-sm text-chalk truncate">{l.name}</span>
                   {l.isOwner && (
-                    <span className="rounded-full border border-sang bg-sang/10 px-2 py-0.5 font-mono text-xs text-chalk/70">
+                    <span className="rounded-full border border-sang bg-sang/10 px-2 py-0.5 font-mono text-xs text-chalk/70 shrink-0">
                       proprio
                     </span>
                   )}
-                </span>
-                <span className="font-mono text-xs text-chalk/40">{l.code}</span>
-              </Link>
+                </Link>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="font-mono text-xs text-chalk/40">{l.code}</span>
+                  {l.isOwner && (
+                    <button
+                      onClick={() => supprimer(l)}
+                      disabled={busy}
+                      aria-label="Supprimer la ligue"
+                      className="rounded-lg border border-ligne p-1.5 text-chalk/50 hover:text-sang-vif hover:border-sang transition-colors disabled:opacity-40"
+                    >
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" /><path d="M5 6l1 14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-14" /><path d="M10 11v6M14 11v6" /></svg>
+                    </button>
+                  )}
+                </div>
+              </div>
             ))}
           </div>
         )}
