@@ -1,12 +1,15 @@
 import { createClient } from '@/lib/supabase-server';
 import Link from 'next/link';
 import Crown from '@/components/Crown';
+
 export const dynamic = 'force-dynamic';
+
 const TABS = [
   { key: 'week', label: 'Semaine', view: 'leaderboard_week' },
   { key: 'month', label: 'Mois', view: 'leaderboard_month' },
   { key: 'season', label: 'Saison', view: 'leaderboard_season' },
 ] as const;
+
 const BADGE_LABELS: Record<string, string> = {
   sniper: 'Sniper',
   super_sniper: 'Super Sniper',
@@ -14,6 +17,7 @@ const BADGE_LABELS: Record<string, string> = {
   leader: 'Leader',
   champion_semaine: 'Champion semaine',
 };
+
 export default async function Classement({ searchParams }: { searchParams: { t?: string } }) {
   const tab = TABS.find((t) => t.key === searchParams.t) ?? TABS[2];
   const supabase = createClient();
@@ -43,14 +47,10 @@ export default async function Classement({ searchParams }: { searchParams: { t?:
           <li key={r.user_id}>
             <Link
               href={'/profil/' + r.user_id}
-              className={'flex items-center gap-3 rounded-2xl border p-3 transition-colors hover:border-chalk/40 ' +
-                (r.rang <= 3 ? 'border-sang bg-pitch' : 'border-ligne bg-ardoise')}
+              className={'flex items-center gap-3 rounded-2xl border p-3 transition-colors hover:border-chalk/40 ' + (r.rang <= 3 ? 'border-sang bg-pitch' : 'border-ligne bg-ardoise')}
             >
               <span className="w-8 text-center font-mono font-bold text-lg">
-                {r.rang === 1 ? String.fromCodePoint(0x1F947) :
-                 r.rang === 2 ? String.fromCodePoint(0x1F948) :
-                 r.rang === 3 ? String.fromCodePoint(0x1F949) :
-                 '#' + r.rang}
+                {r.rang === 1 ? String.fromCodePoint(0x1F947) : r.rang === 2 ? String.fromCodePoint(0x1F948) : r.rang === 3 ? String.fromCodePoint(0x1F949) : '#' + r.rang}
               </span>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold truncate flex items-center gap-1.5">
