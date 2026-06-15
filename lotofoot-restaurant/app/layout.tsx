@@ -3,14 +3,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import LogoutButton from '@/components/LogoutButton';
 import './globals.css';
-
 export const metadata: Metadata = {
   title: "LotoFoot - L'Arpege",
   description: "Le concours de pronostics foot de l'equipe.",
   manifest: '/manifest.json',
 };
 export const viewport: Viewport = { themeColor: '#0B0B0D' };
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr">
@@ -29,7 +27,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </span>
             </Link>
           </div>
-
           <nav className="overflow-x-auto scrollbar-hide border-t border-ligne">
             <div className="flex min-w-max px-2 py-1 gap-1">
               <Link href="/" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-chalk/70 hover:text-chalk hover:bg-ardoise whitespace-nowrap transition-colors">
@@ -44,6 +41,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/stats" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-chalk/70 hover:text-chalk hover:bg-ardoise whitespace-nowrap transition-colors">
                 Mes stats
               </Link>
+              <Link href="/defi" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-chalk/70 hover:text-chalk hover:bg-ardoise whitespace-nowrap transition-colors">
+                Défi 🔥
+              </Link>
               <Link href="/tournoi" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-chalk/70 hover:text-chalk hover:bg-ardoise whitespace-nowrap transition-colors">
                 Vainqueur
               </Link>
@@ -54,7 +54,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </nav>
         </header>
-
         <main className="mx-auto max-w-lg px-4 py-5">{children}</main>
       </body>
     </html>
