@@ -4,6 +4,30 @@ import { createAdmin } from '@/lib/supabase-server';
 const WORLD_CUP_ID = 1;
 const SEASONS = [2026, 2025];
 
+const PAYS_FR: Record<string, string> = {
+  'Algeria': 'Algérie', 'Argentina': 'Argentine', 'Australia': 'Australie',
+  'Austria': 'Autriche', 'Belgium': 'Belgique', 'Bosnia & Herzegovina': 'Bosnie-Herzégovine',
+  'Brazil': 'Brésil', 'Canada': 'Canada', 'Cape Verde Islands': 'Cap-Vert',
+  'Colombia': 'Colombie', 'Congo DR': 'RD Congo', 'Croatia': 'Croatie',
+  'Curaçao': 'Curaçao', 'Czechia': 'Tchéquie', 'Ecuador': 'Équateur',
+  'Egypt': 'Égypte', 'England': 'Angleterre', 'France': 'France',
+  'Germany': 'Allemagne', 'Ghana': 'Ghana', 'Haiti': 'Haïti',
+  'Iran': 'Iran', 'Iraq': 'Irak', 'Ivory Coast': "Côte d'Ivoire",
+  'Japan': 'Japon', 'Jordan': 'Jordanie', 'Mexico': 'Mexique',
+  'Morocco': 'Maroc', 'Netherlands': 'Pays-Bas', 'New Zealand': 'Nouvelle-Zélande',
+  'Norway': 'Norvège', 'Panama': 'Panama', 'Paraguay': 'Paraguay',
+  'Portugal': 'Portugal', 'Qatar': 'Qatar', 'Saudi Arabia': 'Arabie saoudite',
+  'Scotland': 'Écosse', 'Senegal': 'Sénégal', 'South Africa': 'Afrique du Sud',
+  'South Korea': 'Corée du Sud', 'Spain': 'Espagne', 'Sweden': 'Suède',
+  'Switzerland': 'Suisse', 'Tunisia': 'Tunisie', 'Türkiye': 'Turquie',
+  'Uruguay': 'Uruguay', 'USA': 'États-Unis', 'Uzbekistan': 'Ouzbékistan',
+};
+
+function fr(name: string | null | undefined): string {
+  if (!name) return 'A determiner';
+  return PAYS_FR[name] ?? name;
+}
+
 function mapStatus(short: string): string {
   if (['1H', '2H', 'ET', 'LIVE', 'P', 'BT'].includes(short)) return 'live';
   if (short === 'HT') return 'halftime';
@@ -57,8 +81,8 @@ export async function GET(req: NextRequest) {
         await admin.from('matches').upsert(
           {
             api_fixture_id: f.fixture.id,
-            home_team: f.teams.home.name ?? 'A determiner',
-            away_team: f.teams.away.name ?? 'A determiner',
+            home_team: fr(f.teams.home.name),
+            away_team: fr(f.teams.away.name),
             home_logo: f.teams.home.logo,
             away_logo: f.teams.away.logo,
             kickoff: f.fixture.date,
@@ -182,7 +206,7 @@ export async function GET(req: NextRequest) {
         let question = '';
         let options: string[] = [];
         if (type === 'over25') {
-          question = 'Plus de 2,5 buts dans ' + affiche + ' ?';
+          question = '3 buts ou plus dans ' + affiche + ' ?';
           options = ['Oui', 'Non'];
         } else if (type === 'goals_range') {
           question = 'Combien de buts au total dans ' + affiche + ' ?';
