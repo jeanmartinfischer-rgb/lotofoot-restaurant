@@ -1,4 +1,6 @@
-import type { Metadata, Viewport } from 'next';
+import type { Metadata, Viewport } from 'next';<script dangerouslySetInnerHTML={{
+  __html: `if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js')`
+}} />
 import Link from 'next/link';
 import Image from 'next/image';
 import LogoutButton from '@/components/LogoutButton';
