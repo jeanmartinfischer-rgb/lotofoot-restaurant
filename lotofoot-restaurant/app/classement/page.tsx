@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase-server';
 import Link from 'next/link';
-import Crown from '@/components/Crown';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,10 +52,7 @@ export default async function Classement({ searchParams }: { searchParams: { t?:
                 {r.rang === 1 ? String.fromCodePoint(0x1F947) : r.rang === 2 ? String.fromCodePoint(0x1F948) : r.rang === 3 ? String.fromCodePoint(0x1F949) : '#' + r.rang}
               </span>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold truncate flex items-center gap-1.5">
-                  {r.rang === 1 && <Crown size={20} />}
-                  <span className="truncate">{r.pseudo}</span>
-                </p>
+                <p className="font-semibold truncate">{r.pseudo}</p>
                 {badgesByUser.get(r.user_id) && (
                   <p className="text-xs text-chalk/50 mt-0.5">
                     {badgesByUser.get(r.user_id)!.join(' | ')}
