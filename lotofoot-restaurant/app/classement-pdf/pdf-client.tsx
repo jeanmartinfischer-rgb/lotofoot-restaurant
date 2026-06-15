@@ -17,8 +17,6 @@ export default function PdfClient({
   currentUserId: string;
 }) {
   const podium = rows.slice(0, 3);
-
-  // Ordre d'affichage du podium : 2e - 1er - 3e
   const ordrePodium = [podium[1], podium[0], podium[2]].filter(Boolean);
 
   return (
@@ -26,17 +24,39 @@ export default function PdfClient({
       <style>{`
         @media print {
           .no-print { display: none !important; }
-          .pdf-page {
+          @page { margin: 0; size: A4 portrait; }
+          html, body { margin: 0 !important; padding: 0 !important; background: #0B0B0D !important; }
+          .diplome {
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+            width: 210mm !important;
+            height: 297mm !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
           }
-          @page { margin: 0; size: A4; }
         }
-        .pdf-page {
+        .diplome {
+          width: 210mm;
+          height: 297mm;
+          margin: 0 auto;
+          position: relative;
           background-image: url('/bg.png');
           background-size: cover;
           background-position: center;
           background-color: #0B0B0D;
+          overflow: hidden;
+        }
+        .diplome-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(180deg, rgba(11,11,13,0.55) 0%, rgba(11,11,13,0.78) 60%, rgba(11,11,13,0.9) 100%);
+        }
+        .cadre-dore {
+          position: absolute;
+          inset: 10mm;
+          border: 2px solid #D4AF37;
+          border-radius: 4px;
+          box-shadow: inset 0 0 0 1px rgba(212,175,55,0.4);
         }
       `}</style>
 
@@ -51,78 +71,92 @@ export default function PdfClient({
       </div>
 
       <p className="no-print mb-4 text-xs text-chalk/50">
-        Astuce : dans la fenetre d'impression, choisis "Enregistrer en PDF" comme destination.
+        Astuce : dans la fenetre d'impression, choisis "Enregistrer en PDF", format A4, sans marges.
       </p>
 
-      {/* La page exportable */}
-      <div className="pdf-page rounded-2xl overflow-hidden" style={{ minHeight: '1000px' }}>
-        <div className="bg-pitch/80 backdrop-blur-sm p-6" style={{ minHeight: '1000px' }}>
+      <div className="diplome shadow-2xl">
+        <div className="diplome-overlay" />
+        <div className="cadre-dore" />
+
+        <div style={{ position: 'relative', padding: '20mm 18mm', height: '100%', display: 'flex', flexDirection: 'column' }}>
           {/* En-tete */}
-          <div className="text-center mb-8 pt-4">
-            <p className="font-display text-3xl text-chalk tracking-tight">
-              LOTO<span className="text-sang-vif">FOOT</span>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontFamily: 'serif', fontSize: '11px', letterSpacing: '3px', color: '#D4AF37' }}>
+              L'ARPEGE — FIFA WORLD CUP 2026
             </p>
-            <p className="font-mono text-xs text-amber-300/80 mt-1">L'ARPEGE — COUPE DU MONDE 2026</p>
-            <p className="font-display text-lg text-chalk mt-4">CLASSEMENT FINAL</p>
+            <p className="font-display" style={{ fontSize: '38px', color: '#fff', marginTop: '10px', letterSpacing: '1px' }}>
+              LOTO<span style={{ color: '#C2272F' }}>FOOT</span>
+            </p>
+            <div style={{ width: '60px', height: '2px', background: '#D4AF37', margin: '14px auto' }} />
+            <p style={{ fontFamily: 'serif', fontSize: '20px', color: '#fff', letterSpacing: '4px' }}>
+              CLASSEMENT FINAL
+            </p>
           </div>
 
           {/* Podium */}
           {ordrePodium.length > 0 && (
-            <div className="flex items-end justify-center gap-3 mb-8">
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '10px', marginTop: '28px' }}>
               {ordrePodium.map((p) => {
                 const isFirst = p.rang === 1;
-                const h = isFirst ? 'h-32' : p.rang === 2 ? 'h-24' : 'h-20';
+                const hauteur = isFirst ? '90px' : p.rang === 2 ? '68px' : '52px';
                 const medal = p.rang === 1 ? '🥇' : p.rang === 2 ? '🥈' : '🥉';
                 return (
-                  <div key={p.user_id} className="flex flex-col items-center" style={{ width: '30%' }}>
-                    <span className="text-2xl mb-1">{medal}</span>
-                    <span className="font-mono text-sm text-chalk text-center truncate w-full px-1">
+                  <div key={p.user_id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '30%' }}>
+                    <span style={{ fontSize: '28px', marginBottom: '4px' }}>{medal}</span>
+                    <span style={{ fontFamily: 'monospace', fontSize: '13px', color: '#fff', textAlign: 'center' }}>
                       {p.pseudo}
                     </span>
-                    <span className="font-mono text-xs text-amber-300 mb-2">{p.total_points} pts</span>
-                    <div
-                      className={
-                        'w-full rounded-t-xl border-t border-x ' +
-                        h +
-                        (isFirst
-                          ? ' border-amber-400 bg-amber-400/20'
-                          : ' border-ligne bg-ardoise/60')
-                      }
-                    />
+                    <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#D4AF37', marginBottom: '6px' }}>
+                      {p.total_points} pts
+                    </span>
+                    <div style={{
+                      width: '100%',
+                      height: hauteur,
+                      borderTop: isFirst ? '2px solid #D4AF37' : '1px solid #2a2a30',
+                      borderLeft: isFirst ? '1px solid #D4AF37' : '1px solid #2a2a30',
+                      borderRight: isFirst ? '1px solid #D4AF37' : '1px solid #2a2a30',
+                      borderTopLeftRadius: '8px',
+                      borderTopRightRadius: '8px',
+                      background: isFirst ? 'rgba(212,175,55,0.18)' : 'rgba(40,40,48,0.5)',
+                    }} />
                   </div>
                 );
               })}
             </div>
           )}
 
-          {/* Tableau complet */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between border-b border-ligne pb-2 mb-2 px-2">
-              <span className="font-mono text-xs text-chalk/50">RANG / JOUEUR</span>
-              <span className="font-mono text-xs text-chalk/50">EXACTS / PTS</span>
+          {/* Tableau */}
+          <div style={{ marginTop: '24px', flex: 1 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(212,175,55,0.4)', paddingBottom: '4px', marginBottom: '6px' }}>
+              <span style={{ fontFamily: 'monospace', fontSize: '9px', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px' }}>RANG / JOUEUR</span>
+              <span style={{ fontFamily: 'monospace', fontSize: '9px', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px' }}>EXACTS / PTS</span>
             </div>
             {rows.map((p) => (
               <div
                 key={p.user_id}
-                className={
-                  'flex items-center justify-between rounded-lg px-2 py-1.5 ' +
-                  (p.user_id === currentUserId ? 'bg-sang/15' : '')
-                }
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '3px 6px',
+                  borderRadius: '4px',
+                  background: p.user_id === currentUserId ? 'rgba(194,39,47,0.18)' : 'transparent',
+                }}
               >
-                <span className="flex items-center gap-3">
-                  <span className="font-mono text-xs text-amber-300/70 w-6">#{p.rang}</span>
-                  <span className="text-sm text-chalk">{p.pseudo}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'rgba(212,175,55,0.7)', width: '22px' }}>#{p.rang}</span>
+                  <span style={{ fontSize: '12px', color: '#fff' }}>{p.pseudo}</span>
                 </span>
-                <span className="flex items-center gap-3">
-                  <span className="font-mono text-xs text-yellow-400">{p.exact_scores}🎯</span>
-                  <span className="font-mono text-sm font-bold text-chalk w-16 text-right">{p.total_points} pts</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontFamily: 'monospace', fontSize: '10px', color: '#facc15' }}>{p.exact_scores}🎯</span>
+                  <span style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: 'bold', color: '#fff', width: '52px', textAlign: 'right' }}>{p.total_points} pts</span>
                 </span>
               </div>
             ))}
           </div>
 
           {/* Pied */}
-          <p className="text-center font-mono text-xs text-chalk/30 mt-8 pb-4">
+          <p style={{ textAlign: 'center', fontFamily: 'monospace', fontSize: '9px', color: 'rgba(255,255,255,0.4)', marginTop: '12px' }}>
             Genere le {new Date().toLocaleDateString('fr-FR')} — lotofoot-restaurant
           </p>
         </div>
