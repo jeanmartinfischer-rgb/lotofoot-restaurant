@@ -3,7 +3,12 @@ import type { Metadata, Viewport } from 'next';<script dangerouslySetInnerHTML={
 }} />
 import Link from 'next/link';
 import Image from 'next/image';
-import LogoutButton from '@/components/LogoutButton';
+import LogoutButton from '@/components/LogoutButton';<Link
+  href="/stats"
+  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-chalk/70 hover:text-chalk hover:bg-ardoise whitespace-nowrap transition-colors"
+>
+  📊 Mes stats
+</Link>
 import './globals.css';
 
 export const metadata: Metadata = {
