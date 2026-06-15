@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
+import StatBar from '@/components/StatBar';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,9 +46,11 @@ export default async function Stats() {
   const tauxReussite = totalParis > 0 ? Math.round((bonsResultats / totalParis) * 100) : 0;
   const tauxExact = totalParis > 0 ? Math.round((scoresExacts / totalParis) * 100) : 0;
 
+  const mesPoints = rang?.total_points ?? 0;
   const moyenneEquipe = allPlayers && allPlayers.length > 0
     ? Math.round(allPlayers.reduce((sum, p) => sum + (p.total_points ?? 0), 0) / allPlayers.length)
     : 0;
+  const ecart = mesPoints - moyenneEquipe;
 
   const pointsCumules: number[] = [];
   let cumul = 0;
@@ -67,34 +70,23 @@ export default async function Stats() {
         <p className="font-mono text-xs text-chalk/50">{profile?.pseudo}</p>
       </div>
 
-      <section className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl border border-sang bg-pitch p-4 text-center">
-          <p className="font-mono text-3xl font-bold text-sang-vif">{rang?.total_points ?? 0}</p>
-          <p className="text-xs text-chalk/60 mt-1">points total</p>
-          <p className="font-mono text-xs text-chalk/40 mt-1">moy. equipe : {moyenneEquipe} pts</p>
-        </div>
-        <div className="rounded-2xl border border-ligne bg-ardoise p-4 text-center">
-          <p className="font-mono text-3xl font-bold">
-            {rang?.rang ? '#' + rang.rang : '-'}
-          </p>
-          <p className="text-xs text-chalk/60 mt-1">classement saison</p>
-          <p className="font-mono text-xs text-chalk/40 mt-1">sur {allPlayers?.length ?? 0} joueurs</p>
+      <section className="rounded-2xl border border-sang bg-pitch p-5 text-center" style={{ boxShadow: '0 0 24px 0 rgba(212,175,55,0.15)' }}>
+        <p className="font-mono text-5xl font-bold text-sang-vif">{mesPoints}</p>
+        <p className="text-xs text-chalk/60 mt-1">points cette saison</p>
+        <div className="mt-3 flex items-center justify-center gap-4 text-sm">
+          <span className="font-mono">{rang?.rang ? '#' + rang.rang : '-'} <span className="text-chalk/50 text-xs">sur {allPlayers?.length ?? 0}</span></span>
+          <span className="text-chalk/30">|</span>
+          {ecart >= 0 ? (
+            <span className="font-mono text-green-400">{String.fromCharCode(8593)} +{ecart} pts vs moyenne</span>
+          ) : (
+            <span className="font-mono text-chalk/50">{String.fromCharCode(8595)} {ecart} pts vs moyenne</span>
+          )}
         </div>
       </section>
 
-      <section className="grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-2xl border border-ligne bg-ardoise p-3">
-          <p className="font-mono text-2xl font-bold text-green-400">{tauxReussite}%</p>
-          <p className="text-xs text-chalk/60">reussite</p>
-        </div>
-        <div className="rounded-2xl border border-ligne bg-ardoise p-3">
-          <p className="font-mono text-2xl font-bold text-yellow-400">{tauxExact}%</p>
-          <p className="text-xs text-chalk/60">exacts</p>
-        </div>
-        <div className="rounded-2xl border border-ligne bg-ardoise p-3">
-          <p className="font-mono text-2xl font-bold">{totalParis}</p>
-          <p className="text-xs text-chalk/60">paris</p>
-        </div>
+      <section className="rounded-2xl border border-ligne bg-ardoise p-4 space-y-3">
+        <StatBar value={tauxReussite} label="Taux de reussite" color="#4ADE80" />
+        <StatBar value={tauxExact} label="Scores exacts" color="#F5C542" />
       </section>
 
       <section className="grid grid-cols-3 gap-2 text-center">
@@ -116,6 +108,20 @@ export default async function Stats() {
         <section className="rounded-2xl border border-ligne bg-ardoise p-4">
           <h2 className="font-display text-sm mb-3">PROGRESSION</h2>
           <svg viewBox={'0 0 ' + graphWidth + ' ' + graphHeight} className="w-full h-20">
+            <defs>
+              <linearGradient id="progFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#C2272F" stopOpacity="0.5" />
+                <stop offset="100%" stopColor="#C2272F" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <polygon
+              fill="url(#progFill)"
+              points={'0,' + graphHeight + ' ' + pointsCumules.map((val, i) => {
+                const x = totalParis > 1 ? (i / (totalParis - 1)) * graphWidth : graphWidth / 2;
+                const y = graphHeight - (val / maxPoints) * graphHeight;
+                return x + ',' + y;
+              }).join(' ') + ' ' + graphWidth + ',' + graphHeight}
+            />
             <polyline
               points={pointsCumules.map((val, i) => {
                 const x = totalParis > 1 ? (i / (totalParis - 1)) * graphWidth : graphWidth / 2;
