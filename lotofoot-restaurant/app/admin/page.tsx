@@ -128,7 +128,11 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
         <button className="w-full rounded-xl bg-sang py-3 font-display text-sm">
           IMPORTER LES MATCHS (COUPE DU MONDE)
         </button>
-      </form>
+      </form>href="/admin/pronos"
+  className="block w-full rounded-xl border border-sang py-3 font-display text-sm text-center text-sang-vif hover:bg-sang hover:text-chalk transition-colors"
+>
+  GERER LES PRONOSTICS
+</a>
 
       <section>
         <h2 className="mb-2 font-display text-sm">JOUEURS</h2>
