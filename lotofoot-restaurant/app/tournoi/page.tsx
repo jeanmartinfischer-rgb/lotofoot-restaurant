@@ -4,13 +4,15 @@ import { revalidatePath } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 
+const DEADLINE = new Date('2026-06-20T23:59:00+02:00');
+
 const EQUIPES = [
   'France', 'Bresil', 'Argentine', 'Angleterre', 'Espagne',
   'Allemagne', 'Portugal', 'Pays-Bas', 'Belgique', 'Uruguay',
   'USA', 'Mexique', 'Canada', 'Maroc', 'Senegal',
   'Japon', 'Coree du Sud', 'Australie', 'Croatie', 'Suisse',
   'Danemark', 'Pologne', 'Serbie', 'Ghana', 'Cameroun',
-  'Nigeria', 'Egypte', 'Algerie', 'Tunisie', 'Cote d\'Ivoire',
+  'Nigeria', 'Egypte', 'Algerie', 'Tunisie', 'Cote d Ivoire',
   'Qatar', 'Arabie Saoudite',
 ];
 
@@ -18,6 +20,8 @@ export default async function Tournoi({ searchParams }: { searchParams: { msg?: 
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
+
+  const isClosed = new Date() >= DEADLINE;
 
   const { data: myPred } = await supabase
     .from('tournament_predictions')
@@ -34,22 +38,20 @@ export default async function Tournoi({ searchParams }: { searchParams: { msg?: 
   for (const p of allPreds ?? []) {
     winnerCount[p.predicted_winner] = (winnerCount[p.predicted_winner] ?? 0) + 1;
   }
-  const sortedWinners = Object.entries(winnerCount)
-    .sort((a, b) => b[1] - a[1]);
-
+  const sortedWinners = Object.entries(winnerCount).sort((a, b) => b[1] - a[1]);
   const totalVotes = allPreds?.length ?? 0;
 
   async function savePred(formData: FormData) {
     'use server';
+    const now = new Date();
+    if (now >= DEADLINE) return;
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-
     const winner = formData.get('winner') as string;
     if (!winner) return;
-
     await supabase.from('tournament_predictions').upsert(
-      { user_id: user.id, predicted_winner: winner, updated_at: new Date().toISOString() },
+      { user_id: user.id, predicted_winner: winner, updated_at: now.toISOString() },
       { onConflict: 'user_id' }
     );
     revalidatePath('/tournoi');
@@ -64,13 +66,31 @@ export default async function Tournoi({ searchParams }: { searchParams: { msg?: 
         </p>
       </div>
 
+      {isClosed ? (
+        <div className="rounded-2xl border border-sang bg-sang/10 p-4 text-center">
+          <p className="font-display text-lg text-sang-vif">PARIS CLOTURES</p>
+          <p className="font-mono text-xs text-chalk/50 mt-1">
+            Les pronostics etaient ouverts jusqu'au 20 juin 2026.
+          </p>
+          <p className="font-mono text-xs text-chalk/40 mt-1">
+            Bonne chance a tous ! Le champion sera connu le 19 juillet.
+          </p>
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-ligne bg-ardoise p-3 text-center">
+          <p className="font-mono text-xs text-chalk/50">
+            Paris ouverts jusqu'au <b className="text-chalk">20 juin 2026 a minuit</b>
+          </p>
+        </div>
+      )}
+
       {searchParams.msg && (
         <p className="rounded-xl border border-sang bg-sang p-3 text-center font-mono text-sm text-chalk">
           {searchParams.msg}
         </p>
       )}
 
-      {myPred ? (
+      {myPred && (
         <div className="rounded-2xl border border-sang bg-sang/10 p-4 text-center">
           <p className="font-mono text-xs text-chalk/50 mb-1">TON PRONOSTIC</p>
           <p className="font-display text-2xl text-sang-vif">{myPred.predicted_winner}</p>
@@ -79,50 +99,50 @@ export default async function Tournoi({ searchParams }: { searchParams: { msg?: 
               +{myPred.bonus_points} pts bonus gagnes !
             </p>
           )}
-          <p className="text-xs text-chalk/40 mt-2">
-            Tu peux changer ton choix tant que la finale n'a pas commence.
-          </p>
-        </div>
-      ) : (
-        <div className="rounded-2xl border border-ligne bg-ardoise p-4 text-center">
-          <p className="font-mono text-xs text-chalk/50">Tu n'as pas encore fait ton pronostic !</p>
+          {!isClosed && (
+            <p className="text-xs text-chalk/40 mt-2">
+              Tu peux changer ton choix jusqu'au 20 juin.
+            </p>
+          )}
         </div>
       )}
 
-      <form action={savePred} className="space-y-3">
-        <p className="font-display text-sm">CHOISIR LE VAINQUEUR</p>
-        <div className="grid grid-cols-2 gap-2">
-          {EQUIPES.map((equipe) => (
-            <label
-              key={equipe}
-              className={'flex items-center gap-2 rounded-xl border p-2 cursor-pointer transition-colors ' +
-                (myPred?.predicted_winner === equipe
-                  ? 'border-sang bg-sang/10'
-                  : 'border-ligne bg-ardoise hover:border-chalk/40')}
-            >
-              <input
-                type="radio"
-                name="winner"
-                value={equipe}
-                defaultChecked={myPred?.predicted_winner === equipe}
-                className="accent-red-600"
-              />
-              <span className="text-sm font-semibold">{equipe}</span>
-            </label>
-          ))}
-        </div>
-        <button
-          type="submit"
-          className="w-full rounded-xl bg-sang py-3 font-display text-sm text-chalk"
-        >
-          VALIDER MON PRONOSTIC
-        </button>
-      </form>
+      {!isClosed && (
+        <form action={savePred} className="space-y-3">
+          <p className="font-display text-sm">CHOISIR LE VAINQUEUR</p>
+          <div className="grid grid-cols-2 gap-2">
+            {EQUIPES.map((equipe) => (
+              <label
+                key={equipe}
+                className={'flex items-center gap-2 rounded-xl border p-2 cursor-pointer transition-colors ' +
+                  (myPred?.predicted_winner === equipe
+                    ? 'border-sang bg-sang/10'
+                    : 'border-ligne bg-ardoise hover:border-chalk/40')}
+              >
+                <input
+                  type="radio"
+                  name="winner"
+                  value={equipe}
+                  defaultChecked={myPred?.predicted_winner === equipe}
+                  className="accent-red-600"
+                />
+                <span className="text-sm font-semibold">{equipe}</span>
+              </label>
+            ))}
+          </div>
+          <button
+            type="submit"
+            className="w-full rounded-xl bg-sang py-3 font-display text-sm text-chalk"
+          >
+            VALIDER MON PRONOSTIC
+          </button>
+        </form>
+      )}
 
       {sortedWinners.length > 0 && (
         <section className="rounded-2xl border border-ligne bg-ardoise p-4 space-y-3">
           <h2 className="font-display text-sm">PALMARES DE L'EQUIPE</h2>
-          <p className="font-mono text-xs text-chalk/40">{totalVotes} pronostic(s) enregistre(s)</p>
+          <p className="font-mono text-xs text-chalk/40">{totalVotes} pronostic(s)</p>
           {sortedWinners.map(([equipe, count]) => (
             <div key={equipe}>
               <div className="flex justify-between text-sm mb-1">
