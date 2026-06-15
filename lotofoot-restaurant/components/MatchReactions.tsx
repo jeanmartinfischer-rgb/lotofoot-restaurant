@@ -5,23 +5,9 @@ import { createClient } from '@/lib/supabase-client';
 
 const EMOJIS = ['⚽', '🔥', '😱', '😅', '👏', '🤣'];
 
-interface ReactionData {
-  emoji: string;
-  count: number;
-  userReacted: boolean;
-}
-
-interface CommentData {
-  id: number;
-  content: string;
-  created_at: string;
-  user_id: string;
-  profiles: { pseudo: string } | null;
-}
-
 export default function MatchReactions({ matchId, userId }: { matchId: number; userId: string }) {
-  const [reactions, setReactions] = useState<Record<string, ReactionData>>({});
-  const [comments, setComments] = useState<CommentData[]>([]);
+  const [reactions, setReactions] = useState<Record<string, { count: number; userReacted: boolean }>>({});
+  const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
   const [showComments, setShowComments] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -38,11 +24,10 @@ export default function MatchReactions({ matchId, userId }: { matchId: number; u
       .select('emoji, user_id')
       .eq('match_id', matchId);
 
-    const map: Record<string, ReactionData> = {};
+    const map: Record<string, { count: number; userReacted: boolean }> = {};
     for (const emoji of EMOJIS) {
       const rows = (data ?? []).filter((r: any) => r.emoji === emoji);
       map[emoji] = {
-        emoji,
         count: rows.length,
         userReacted: rows.some((r: any) => r.user_id === userId),
       };
@@ -58,7 +43,7 @@ export default function MatchReactions({ matchId, userId }: { matchId: number; u
       .eq('match_id', matchId)
       .order('created_at', { ascending: false })
       .limit(20);
-    setComments((data as CommentData[]) ?? []);
+    setComments(data ?? []);
   }
 
   async function toggleReaction(emoji: string) {
@@ -121,7 +106,9 @@ export default function MatchReactions({ matchId, userId }: { matchId: number; u
         <button
           onClick={() => setShowComments(!showComments)}
           className={'flex items-center gap-1 rounded-full px-2 py-1 text-sm border transition-all ' +
-            (showComments ? 'bg-sang border-sang text-chalk' : 'bg-ardoise border-ligne text-chalk/70 hover:border-chalk/40')}
+            (showComments
+              ? 'bg-sang border-sang text-chalk'
+              : 'bg-ardoise border-ligne text-chalk/70 hover:border-chalk/40')}
         >
           <span>💬</span>
           {comments.length > 0 && (
@@ -158,7 +145,7 @@ export default function MatchReactions({ matchId, userId }: { matchId: number; u
           )}
 
           <div className="space-y-2 max-h-48 overflow-y-auto">
-            {comments.map((c) => (
+            {comments.map((c: any) => (
               <div key={c.id} className="flex items-start gap-2 rounded-xl bg-ardoise border border-ligne p-2">
                 <div className="flex-1 min-w-0">
                   <p className="font-mono text-xs font-bold text-sang-vif">
