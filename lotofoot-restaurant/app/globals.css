@@ -2,6 +2,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+html {
+  background-color: #0B0B0D;
+}
 body {
   @apply text-chalk font-body antialiased;
   background-color: #0B0B0D;
@@ -47,7 +50,6 @@ main, header, nav {
   box-shadow: 0 0 0 4px rgba(142,27,34,0.30), 0 0 20px rgba(142,27,34,0.20);
 }
 .pick:disabled { @apply opacity-40; }
-
 @keyframes pageEnter {
   from { opacity: 0; transform: translateY(28px) scale(0.97); }
   to { opacity: 1; transform: translateY(0) scale(1); }
@@ -64,7 +66,6 @@ main, header, nav {
 .page-enter > *:nth-child(4) { animation-delay: 0.26s; }
 .page-enter > *:nth-child(5) { animation-delay: 0.33s; }
 .page-enter > *:nth-child(6) { animation-delay: 0.40s; }
-
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
