@@ -19,43 +19,43 @@ export default async function Profil({ params }: { params: { id: string } }) {
   if (!user) redirect('/login');
 
   const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', params.id)
-    .single();
-
+    .from('profiles').select('*').eq('id', params.id).single();
   if (!profile) redirect('/classement');
 
   const { data: rang } = await supabase
     .from('leaderboard_season')
     .select('rang, total_points, exact_scores, correct_results')
-    .eq('user_id', params.id)
-    .single();
+    .eq('user_id', params.id).single();
 
   const { data: badges } = await supabase
-    .from('badges')
-    .select('*')
-    .eq('user_id', params.id);
-
-  const { data: preds } = await supabase
-    .from('predictions')
-    .select('*, matches!inner(home_team, away_team, kickoff, home_score, away_score, status)')
-    .eq('user_id', params.id)
-    .not('points', 'is', null)
-    .order('matches(kickoff)', { ascending: false });
+    .from('badges').select('*').eq('user_id', params.id);
 
   const { data: tournoi } = await supabase
     .from('tournament_predictions')
     .select('predicted_winner, bonus_points')
-    .eq('user_id', params.id)
-    .single();
+    .eq('user_id', params.id).single();
 
   const { data: allPlayers } = await supabase
     .from('leaderboard_season').select('total_points');
 
+  const { data: allMatches } = await supabase
+    .from('matches').select('*').order('kickoff');
+
+  const { data: preds } = await supabase
+    .from('predictions').select('*').eq('user_id', params.id);
+
+  const predByMatch = new Map((preds ?? []).map((p: any) => [p.match_id, p]));
+
+  const now = new Date();
+  const matchesFinished = (allMatches ?? []).filter((m: any) => m.status === 'finished');
+  const matchesLive = (allMatches ?? []).filter((m: any) => m.status === 'live' || m.status === 'halftime');
+  const matchesUpcoming = (allMatches ?? []).filter((m: any) =>
+    m.status === 'scheduled' && new Date(m.kickoff) > now
+  );
+
   const totalParis = preds?.length ?? 0;
-  const bonsResultats = preds?.filter((p) => p.is_correct_result).length ?? 0;
-  const scoresExacts = preds?.filter((p) => p.is_exact_score).length ?? 0;
+  const bonsResultats = preds?.filter((p: any) => p.is_correct_result).length ?? 0;
+  const scoresExacts = preds?.filter((p: any) => p.is_exact_score).length ?? 0;
   const tauxReussite = totalParis > 0 ? Math.round((bonsResultats / totalParis) * 100) : 0;
   const moyenneEquipe = allPlayers && allPlayers.length > 0
     ? Math.round(allPlayers.reduce((sum, p) => sum + (p.total_points ?? 0), 0) / allPlayers.length)
@@ -63,13 +63,73 @@ export default async function Profil({ params }: { params: { id: string } }) {
 
   const isMe = user.id === params.id;
 
+  function MatchLine({ match }: { match: any }) {
+    const pred = predByMatch.get(match.id);
+    const isFinished = match.status === 'finished';
+    const isLive = match.status === 'live' || match.status === 'halftime';
+
+    return (
+      <div className={'flex items-center gap-2 rounded-xl p-2 border ' +
+        (pred?.points === 3 ? 'border-yellow-400/30 bg-yellow-400/5' :
+         pred?.points === 1 ? 'border-green-400/30 bg-green-400/5' :
+         isFinished && pred ? 'border-ligne bg-pitch/30' :
+         isLive ? 'border-sang-vif/30 bg-sang-vif/5' :
+         'border-ligne bg-ardoise')}>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold truncate">
+            {match.home_team} vs {match.away_team}
+          </p>
+          <p className="font-mono text-xs text-chalk/40">
+            {new Date(match.kickoff).toLocaleDateString('fr-FR', {
+              day: 'numeric', month: 'short', timeZone: TZ
+            })} {new Date(match.kickoff).toLocaleTimeString('fr-FR', {
+              hour: '2-digit', minute: '2-digit', timeZone: TZ
+            })}
+          </p>
+        </div>
+
+        <div className="text-center min-w-[60px]">
+          {pred ? (
+            <p className="font-mono text-xs font-bold text-chalk">
+              {pred.pred_home}-{pred.pred_away}
+            </p>
+          ) : (
+            <p className="font-mono text-xs text-chalk/30">-</p>
+          )}
+          {isFinished && match.home_score !== null && (
+            <p className="font-mono text-xs text-chalk/40">
+              {match.home_score}-{match.away_score}
+            </p>
+          )}
+          {isLive && match.home_score !== null && (
+            <p className="font-mono text-xs text-sang-vif font-bold animate-pulse">
+              {match.home_score}-{match.away_score}
+            </p>
+          )}
+        </div>
+
+        <div className="w-8 text-right">
+          {pred?.points !== null && pred?.points !== undefined && isFinished ? (
+            <span className={'font-mono text-sm font-bold ' +
+              (pred.points === 3 ? 'text-yellow-400' :
+               pred.points === 1 ? 'text-green-400' : 'text-chalk/30')}>
+              {pred.points === 3 ? '+3' : pred.points === 1 ? '+1' : '0'}
+            </span>
+          ) : isLive ? (
+            <span className="font-mono text-xs text-sang-vif font-bold">LIVE</span>
+          ) : !pred ? (
+            <span className="font-mono text-xs text-chalk/20">—</span>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <a href="/classement" className="text-xs text-chalk/50 hover:text-chalk">
-          Retour au classement
-        </a>
-      </div>
+      <a href="/classement" className="text-xs text-chalk/50 hover:text-chalk block">
+        Retour au classement
+      </a>
 
       <div className="glass-gold rounded-2xl p-5 text-center space-y-2">
         <div className="w-16 h-16 rounded-full bg-sang flex items-center justify-center mx-auto font-display text-2xl text-chalk">
@@ -78,9 +138,7 @@ export default async function Profil({ params }: { params: { id: string } }) {
         <h1 className="font-display text-2xl">{profile.pseudo}</h1>
         {isMe && <p className="font-mono text-xs text-chalk/40">C'est toi !</p>}
         {rang?.rang && (
-          <p className="font-mono text-lg font-bold text-sang-vif">
-            #{rang.rang} au classement
-          </p>
+          <p className="font-mono text-lg font-bold text-sang-vif">#{rang.rang} au classement</p>
         )}
       </div>
 
@@ -104,11 +162,8 @@ export default async function Profil({ params }: { params: { id: string } }) {
         <section className="rounded-2xl border border-ligne bg-ardoise p-4">
           <h2 className="font-display text-sm mb-3">BADGES</h2>
           <div className="flex flex-wrap gap-2">
-            {badges.map((b) => (
-              <span
-                key={b.id}
-                className="rounded-full border border-sang bg-sang/10 px-3 py-1 font-mono text-xs text-chalk"
-              >
+            {badges.map((b: any) => (
+              <span key={b.id} className="rounded-full border border-sang bg-sang/10 px-3 py-1 font-mono text-xs text-chalk">
                 {BADGE_LABELS[b.type] ?? b.label}
               </span>
             ))}
@@ -121,58 +176,44 @@ export default async function Profil({ params }: { params: { id: string } }) {
           <h2 className="font-display text-sm mb-2">PRONOSTIC VAINQUEUR CdM</h2>
           <p className="font-display text-xl text-sang-vif">{tournoi.predicted_winner}</p>
           {tournoi.bonus_points > 0 && (
-            <p className="font-mono text-sm text-yellow-400 mt-1">
-              +{tournoi.bonus_points} pts bonus gagnes !
-            </p>
+            <p className="font-mono text-sm text-yellow-400 mt-1">+{tournoi.bonus_points} pts bonus !</p>
           )}
         </section>
       )}
 
-      <section className="rounded-2xl border border-ligne bg-ardoise p-4">
-        <h2 className="font-display text-sm mb-3">
-          HISTORIQUE ({totalParis} paris)
-        </h2>
-        {totalParis === 0 && (
-          <p className="text-xs text-chalk/40 text-center">Aucun pari enregistre.</p>
-        )}
-        <div className="space-y-2">
-          {preds?.map((p: any) => (
-            <div
-              key={p.id}
-              className={'flex items-center gap-2 rounded-xl p-2 border ' +
-                (p.points === 3 ? 'border-yellow-400/30 bg-yellow-400/5' :
-                 p.points === 1 ? 'border-green-400/30 bg-green-400/5' :
-                 'border-ligne bg-pitch/50')}
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold truncate">
-                  {p.matches.home_team} vs {p.matches.away_team}
-                </p>
-                <p className="font-mono text-xs text-chalk/40">
-                  {new Date(p.matches.kickoff).toLocaleDateString('fr-FR', {
-                    day: 'numeric', month: 'short', timeZone: TZ
-                  })}
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="font-mono text-xs text-chalk/50">
-                  {p.pred_home}-{p.pred_away}
-                </p>
-                <p className="font-mono text-xs text-chalk/30">
-                  {p.matches.home_score !== null
-                    ? p.matches.home_score + '-' + p.matches.away_score
-                    : '-'}
-                </p>
-              </div>
-              <span className={'font-mono text-sm font-bold w-8 text-right ' +
-                (p.points === 3 ? 'text-yellow-400' :
-                 p.points === 1 ? 'text-green-400' : 'text-chalk/30')}>
-                {p.points === 3 ? '+3' : p.points === 1 ? '+1' : '0'}
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
+      {matchesLive.length > 0 && (
+        <section className="rounded-2xl border border-sang-vif bg-ardoise p-4">
+          <h2 className="font-display text-sm mb-3 flex items-center gap-2">
+            <span className="inline-block w-2 h-2 rounded-full bg-sang-vif animate-pulse"></span>
+            EN DIRECT
+          </h2>
+          <div className="space-y-2">
+            {matchesLive.map((m: any) => <MatchLine key={m.id} match={m} />)}
+          </div>
+        </section>
+      )}
+
+      {matchesUpcoming.length > 0 && (
+        <section className="rounded-2xl border border-ligne bg-ardoise p-4">
+          <h2 className="font-display text-sm mb-3">
+            A VENIR ({matchesUpcoming.filter((m: any) => predByMatch.has(m.id)).length}/{matchesUpcoming.length} paris)
+          </h2>
+          <div className="space-y-2">
+            {matchesUpcoming.map((m: any) => <MatchLine key={m.id} match={m} />)}
+          </div>
+        </section>
+      )}
+
+      {matchesFinished.length > 0 && (
+        <section className="rounded-2xl border border-ligne bg-ardoise p-4">
+          <h2 className="font-display text-sm mb-3">
+            MATCHS TERMINES ({matchesFinished.length})
+          </h2>
+          <div className="space-y-2">
+            {[...matchesFinished].reverse().map((m: any) => <MatchLine key={m.id} match={m} />)}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
