@@ -1,3 +1,5 @@
+'use client';
+
 export default function Crown({ size = 22 }: { size?: number }) {
   return (
     <span
