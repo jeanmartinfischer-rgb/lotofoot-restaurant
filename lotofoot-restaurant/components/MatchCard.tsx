@@ -138,7 +138,15 @@ export default function MatchCard({ match, prediction, userId }: {
       {saved && <p className="mt-2 text-center font-mono text-xs font-bold text-green-400">Pronostic enregistre</p>}
       {error && <p className="mt-2 text-center font-mono text-xs text-sang-vif">{error}</p>}
 
-      {prediction?.points !== null && prediction?.points !== undefined && isOver && (
+      {isOver && (
+        
+          href={`/matchs/${match.id}`}
+          className="mt-2 block w-full rounded-xl border border-ligne py-2 text-center font-mono text-xs text-chalk/60 hover:text-chalk hover:border-chalk/40 transition-colors"
+        >
+          Voir le resume du match →
+        </a>
+      )}
+{prediction?.points !== null && prediction?.points !== undefined && isOver && (
         <p className="mt-3 rounded-xl border border-ligne bg-pitch p-2 text-center font-mono text-sm">
           {prediction.is_exact_score && <>Score exact ! <b className="text-sang-vif">+3 pts</b></>}
           {!prediction.is_exact_score && prediction.is_correct_result && <>Bon resultat <b>+1 pt</b></>}
