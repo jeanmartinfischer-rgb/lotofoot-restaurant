@@ -190,10 +190,7 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
         </button>
       </form>
 
-      
-        href="/admin/pronos"
-        className="block w-full rounded-xl bg-ardoise border border-ligne py-3 font-display text-sm text-center text-chalk"
-      >
+      <a href="/admin/pronos" className="block w-full rounded-xl bg-ardoise border border-ligne py-3 font-display text-sm text-center text-chalk">
         GERER LES PRONOSTICS
       </a>
 
@@ -214,9 +211,7 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
                     {emailMap.get(u.id) ?? 'Email non disponible'}
                   </p>
                   <p className="font-mono text-xs text-chalk/40">
-                    Inscrit le {new Date(u.created_at).toLocaleDateString('fr-FR', {
-                      day: 'numeric', month: 'long', year: 'numeric'
-                    })}
+                    Inscrit le {new Date(u.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
                 </div>
                 <div className="flex flex-col gap-1 shrink-0">
