@@ -5,22 +5,23 @@ import { createClient } from '@/lib/supabase-client';
 
 const EMOJIS = ['⚽', '🔥', '😱', '😅', '👏', '🤣'];
 
-interface Reaction {
+interface ReactionData {
   emoji: string;
   count: number;
   userReacted: boolean;
 }
 
-interface Comment {
+interface CommentData {
   id: number;
   content: string;
   created_at: string;
-  profiles: { pseudo: string };
+  user_id: string;
+  profiles: { pseudo: string } | null;
 }
 
 export default function MatchReactions({ matchId, userId }: { matchId: number; userId: string }) {
-  const [reactions, setReactions] = useState<Record<string, Reaction>>({});
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [reactions, setReactions] = useState<Record<string, ReactionData>>({});
+  const [comments, setComments] = useState<CommentData[]>([]);
   const [newComment, setNewComment] = useState('');
   const [showComments, setShowComments] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -37,13 +38,13 @@ export default function MatchReactions({ matchId, userId }: { matchId: number; u
       .select('emoji, user_id')
       .eq('match_id', matchId);
 
-    const map: Record<string, Reaction> = {};
+    const map: Record<string, ReactionData> = {};
     for (const emoji of EMOJIS) {
-      const rows = data?.filter((r) => r.emoji === emoji) ?? [];
+      const rows = (data ?? []).filter((r: any) => r.emoji === emoji);
       map[emoji] = {
         emoji,
         count: rows.length,
-        userReacted: rows.some((r) => r.user_id === userId),
+        userReacted: rows.some((r: any) => r.user_id === userId),
       };
     }
     setReactions(map);
@@ -53,17 +54,16 @@ export default function MatchReactions({ matchId, userId }: { matchId: number; u
     const supabase = createClient();
     const { data } = await supabase
       .from('comments')
-      .select('id, content, created_at, profiles(pseudo)')
+      .select('id, content, created_at, user_id, profiles(pseudo)')
       .eq('match_id', matchId)
       .order('created_at', { ascending: false })
       .limit(20);
-    setComments((data as any) ?? []);
+    setComments((data as CommentData[]) ?? []);
   }
 
   async function toggleReaction(emoji: string) {
     const supabase = createClient();
     const current = reactions[emoji];
-
     if (current?.userReacted) {
       await supabase.from('reactions')
         .delete()
@@ -120,7 +120,8 @@ export default function MatchReactions({ matchId, userId }: { matchId: number; u
         })}
         <button
           onClick={() => setShowComments(!showComments)}
-          className="flex items-center gap-1 rounded-full px-2 py-1 text-sm border border-ligne bg-ardoise text-chalk/70 hover:border-chalk/40 transition-all"
+          className={'flex items-center gap-1 rounded-full px-2 py-1 text-sm border transition-all ' +
+            (showComments ? 'bg-sang border-sang text-chalk' : 'bg-ardoise border-ligne text-chalk/70 hover:border-chalk/40')}
         >
           <span>💬</span>
           {comments.length > 0 && (
@@ -173,7 +174,7 @@ export default function MatchReactions({ matchId, userId }: { matchId: number; u
                 {c.user_id === userId && (
                   <button
                     onClick={() => deleteComment(c.id)}
-                    className="text-chalk/30 hover:text-sang-vif text-xs"
+                    className="text-chalk/30 hover:text-sang-vif text-xs mt-1"
                   >
                     X
                   </button>
