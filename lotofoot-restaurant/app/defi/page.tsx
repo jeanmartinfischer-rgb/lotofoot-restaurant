@@ -29,7 +29,7 @@ export default async function Defi() {
   }
   const { data: ranking } = await supabase
     .from('profiles')
-    .select('id, pseudo, streak_current, streak_best')
+    .select('id, pseudo, avatar_url, streak_current, streak_best')
     .eq('is_guest', false)
     .order('streak_current', { ascending: false })
     .order('streak_best', { ascending: false })
