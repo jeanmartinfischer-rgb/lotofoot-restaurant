@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
+import Avatar from '@/components/Avatar';
 
 type Challenge = {
   id: number;
@@ -27,6 +28,7 @@ type Challenge = {
 type RankRow = {
   id: string;
   pseudo: string;
+  avatar_url: string | null;
   streak_current: number;
   streak_best: number;
 };
@@ -223,6 +225,7 @@ export default function DefiClient({
                     <span className="font-mono text-xs w-6 text-center">
                       {rank === 1 ? String.fromCodePoint(0x1F947) : rank === 2 ? String.fromCodePoint(0x1F948) : rank === 3 ? String.fromCodePoint(0x1F949) : '#' + rank}
                     </span>
+                    <Avatar avatarUrl={r.avatar_url} pseudo={r.pseudo} size={32} />
                     <span className="truncate">{r.pseudo}</span>
                   </span>
                   <span className="font-mono text-xs shrink-0">
