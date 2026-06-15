@@ -50,9 +50,7 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
     'use server';
     const admin = createAdmin();
     const key = process.env.API_FOOTBALL_KEY;
-    if (!key) {
-      redirect('/admin?msg=Cle+API+absente+dans+Vercel');
-    }
+    if (!key) redirect('/admin?msg=Cle+API+absente+dans+Vercel');
 
     let totalImported = 0;
     let diag = '';
@@ -66,7 +64,7 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
         const hasError = json.errors && Object.keys(json.errors).length > 0;
         const errTxt = hasError ? JSON.stringify(json.errors) : '';
         const fixtures = json.response ?? [];
-        diag = 'saison ' + season + ': HTTP ' + res.status + ', ' + fixtures.length + ' matchs' + (errTxt ? ', erreur: ' + errTxt : '');
+        diag = 'saison ' + season + ': ' + fixtures.length + ' matchs' + (errTxt ? ', erreur: ' + errTxt : '');
         if (hasError) break;
         if (fixtures.length === 0) continue;
         for (const f of fixtures) {
@@ -90,13 +88,11 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
         }
         break;
       } catch (err) {
-        diag = 'Erreur reseau: ' + String(err);
+        diag = 'Erreur: ' + String(err);
       }
     }
     revalidatePath('/matchs');
-    const msg = totalImported > 0
-      ? totalImported + ' matchs importes !'
-      : 'Aucun match. Detail: ' + diag;
+    const msg = totalImported > 0 ? totalImported + ' matchs importes !' : 'Aucun match. ' + diag;
     redirect('/admin?msg=' + encodeURIComponent(msg));
   }
 
@@ -104,9 +100,7 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
     'use server';
     const admin = createAdmin();
     const key = process.env.API_FOOTBALL_KEY;
-    if (!key) {
-      redirect('/admin?msg=Cle+API+absente');
-    }
+    if (!key) redirect('/admin?msg=Cle+API+absente');
 
     const { data: finishedMatches } = await admin
       .from('matches')
@@ -121,7 +115,6 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
         .select('*', { count: 'exact', head: true })
         .eq('match_id', match.id);
       if (count && count > 0) continue;
-
       try {
         const res = await fetch(
           'https://v3.football.api-sports.io/fixtures/events?fixture=' + match.api_fixture_id,
@@ -147,37 +140,12 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
     redirect('/admin?msg=' + encodeURIComponent(imported + ' matchs avec evenements importes !'));
   }
 
-  async function recalcPoints() {
-    'use server';
-    const admin = createAdmin();
-    await admin.rpc('exec_sql', {
-      sql: `
-        UPDATE public.predictions p
-        SET
-          points = CASE
-            WHEN p.pred_home = m.home_score AND p.pred_away = m.away_score THEN 3
-            WHEN sign(p.pred_home - p.pred_away) = sign(m.home_score - m.away_score) THEN 1
-            ELSE 0
-          END,
-          is_exact_score = (p.pred_home = m.home_score AND p.pred_away = m.away_score),
-          is_correct_result = (sign(p.pred_home - p.pred_away) = sign(m.home_score - m.away_score)),
-          updated_at = now()
-        FROM public.matches m
-        WHERE p.match_id = m.id
-          AND m.status = 'finished'
-          AND m.home_score IS NOT NULL;
-      `
-    });
-    revalidatePath('/classement');
-    redirect('/admin?msg=Points+recalcules+!');
-  }
-
   return (
     <div className="space-y-4">
       <h1 className="font-display text-2xl">ADMIN</h1>
 
       {searchParams.msg && (
-        <p className="rounded-xl border border-sang bg-sang/10 p-3 text-center font-mono text-sm">
+        <p className="rounded-xl border border-sang bg-sang p-3 text-center font-mono text-sm text-chalk">
           {searchParams.msg}
         </p>
       )}
@@ -202,20 +170,20 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
       </section>
 
       <form action={syncNow}>
-        <button className="w-full rounded-xl bg-sang py-3 font-display text-sm">
-          IMPORTER LES MATCHS (COUPE DU MONDE)
+        <button className="w-full rounded-xl bg-sang py-3 font-display text-sm text-chalk">
+          IMPORTER LES MATCHS
         </button>
       </form>
 
       <form action={importEvents}>
-        <button className="w-full rounded-xl border border-chalk/20 py-3 font-display text-sm text-chalk/70">
-          IMPORTER LES EVENEMENTS (BUTEURS, CARTONS...)
+        <button className="w-full rounded-xl bg-sang py-3 font-display text-sm text-chalk">
+          IMPORTER LES EVENEMENTS
         </button>
       </form>
 
       <a
         href="/admin/pronos"
-        className="block w-full rounded-xl border border-sang py-3 font-display text-sm text-center text-sang-vif"
+        className="block w-full rounded-xl bg-ardoise border border-ligne py-3 font-display text-sm text-center text-chalk"
       >
         GERER LES PRONOSTICS
       </a>
@@ -244,7 +212,7 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
                 <form action={toggleSuspend}>
                   <input type="hidden" name="id" value={u.id} />
                   <input type="hidden" name="suspended" value={String(u.is_suspended)} />
-                  <button className="rounded-lg border border-ligne px-3 py-1 text-xs font-semibold">
+                  <button className="rounded-lg bg-ardoise border border-ligne px-3 py-1 text-xs font-semibold text-chalk">
                     {u.is_suspended ? 'Reactiver' : 'Suspendre'}
                   </button>
                 </form>
