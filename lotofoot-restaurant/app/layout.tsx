@@ -1,14 +1,7 @@
-import type { Metadata, Viewport } from 'next';<script dangerouslySetInnerHTML={{
-  __html: `if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js')`
-}} />
+import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
-import LogoutButton from '@/components/LogoutButton';<Link
-  href="/stats"
-  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-chalk/70 hover:text-chalk hover:bg-ardoise whitespace-nowrap transition-colors"
->
-  📊 Mes stats
-</Link>
+import LogoutButton from '@/components/LogoutButton';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -22,6 +15,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr">
       <body className="min-h-dvh">
+        <script dangerouslySetInnerHTML={{
+          __html: "if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js')"
+        }} />
         <header className="sticky top-0 z-20 border-b border-ligne bg-pitch/95 backdrop-blur">
           <div className="flex items-center justify-between px-4 py-2">
             <Link href="/" className="flex items-center gap-2 shrink-0">
@@ -36,21 +32,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           <nav className="overflow-x-auto scrollbar-hide border-t border-ligne">
             <div className="flex min-w-max px-2 py-1 gap-1">
-              <Link href="/"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-chalk/70 hover:text-chalk hover:bg-ardoise whitespace-nowrap transition-colors">
-                ⚽ Accueil
+              <Link href="/" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-chalk/70 hover:text-chalk hover:bg-ardoise whitespace-nowrap transition-colors">
+                Accueil
               </Link>
-              <Link href="/matchs"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-chalk/70 hover:text-chalk hover:bg-ardoise whitespace-nowrap transition-colors">
-                🎯 Mes paris
+              <Link href="/matchs" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-chalk/70 hover:text-chalk hover:bg-ardoise whitespace-nowrap transition-colors">
+                Mes paris
               </Link>
-              <Link href="/classement"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-chalk/70 hover:text-chalk hover:bg-ardoise whitespace-nowrap transition-colors">
-                🏆 Classement
+              <Link href="/classement" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-chalk/70 hover:text-chalk hover:bg-ardoise whitespace-nowrap transition-colors">
+                Classement
               </Link>
-              <Link href="/admin"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-chalk/70 hover:text-chalk hover:bg-ardoise whitespace-nowrap transition-colors">
-                ⚙️ Admin
+              <Link href="/stats" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-chalk/70 hover:text-chalk hover:bg-ardoise whitespace-nowrap transition-colors">
+                Mes stats
+              </Link>
+              <Link href="/admin" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-chalk/70 hover:text-chalk hover:bg-ardoise whitespace-nowrap transition-colors">
+                Admin
               </Link>
               <LogoutButton />
             </div>
