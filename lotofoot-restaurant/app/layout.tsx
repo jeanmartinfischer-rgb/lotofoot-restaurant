@@ -44,6 +44,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/defi" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-chalk/70 hover:text-chalk hover:bg-ardoise whitespace-nowrap transition-colors">
                 Défi 🔥
               </Link>
+              <Link href="/ligues" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-chalk/70 hover:text-chalk hover:bg-ardoise whitespace-nowrap transition-colors">
+                Ligues
+              </Link>
               <Link href="/tournoi" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-chalk/70 hover:text-chalk hover:bg-ardoise whitespace-nowrap transition-colors">
                 Vainqueur
               </Link>
