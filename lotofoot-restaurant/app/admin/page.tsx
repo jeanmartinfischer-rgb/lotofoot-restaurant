@@ -100,7 +100,7 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <h1 className="font-display text-2xl">ADMIN</h1>
 
       {searchParams.msg && (
@@ -128,11 +128,14 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
         <button className="w-full rounded-xl bg-sang py-3 font-display text-sm">
           IMPORTER LES MATCHS (COUPE DU MONDE)
         </button>
-      </form>href="/admin/pronos"
-  className="block w-full rounded-xl border border-sang py-3 font-display text-sm text-center text-sang-vif hover:bg-sang hover:text-chalk transition-colors"
->
-  GERER LES PRONOSTICS
-</a>
+      </form>
+
+      <a
+        href="/admin/pronos"
+        className="block w-full rounded-xl border border-sang py-3 font-display text-sm text-center text-sang-vif"
+      >
+        GERER LES PRONOSTICS
+      </a>
 
       <section>
         <h2 className="mb-2 font-display text-sm">JOUEURS</h2>
