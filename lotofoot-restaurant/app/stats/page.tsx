@@ -3,6 +3,14 @@ import { createClient } from '@/lib/supabase-server';
 
 export const dynamic = 'force-dynamic';
 
+const BADGE_LABELS: Record<string, string> = {
+  sniper: 'Sniper',
+  super_sniper: 'Super Sniper',
+  premiere_victoire: 'Premiere victoire',
+  leader: 'Leader',
+  champion_semaine: 'Champion semaine',
+};
+
 export default async function Stats() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -13,14 +21,14 @@ export default async function Stats() {
 
   const { data: preds } = await supabase
     .from('predictions')
-    .select('*, matches!inner(home_team, away_team, kickoff, status, home_score, away_score)')
+    .select('*, matches!inner(home_team, away_team, kickoff, status)')
     .eq('user_id', user.id)
     .not('points', 'is', null)
     .order('matches(kickoff)');
 
   const { data: rang } = await supabase
     .from('leaderboard_season')
-    .select('rang, total_points, exact_scores, correct_results')
+    .select('rang, total_points, exact_scores')
     .eq('user_id', user.id)
     .single();
 
@@ -33,7 +41,7 @@ export default async function Stats() {
   const totalParis = preds?.length ?? 0;
   const bonsResultats = preds?.filter((p) => p.is_correct_result).length ?? 0;
   const scoresExacts = preds?.filter((p) => p.is_exact_score).length ?? 0;
-  const mauvais = preds?.filter((p) => !p.is_correct_result).length ?? 0;
+  const mauvais = totalParis - bonsResultats;
   const tauxReussite = totalParis > 0 ? Math.round((bonsResultats / totalParis) * 100) : 0;
   const tauxExact = totalParis > 0 ? Math.round((scoresExacts / totalParis) * 100) : 0;
 
@@ -52,20 +60,6 @@ export default async function Stats() {
   const graphWidth = 300;
   const graphHeight = 80;
 
-  const points = pointsCumules.map((val, i) => {
-    const x = totalParis > 1 ? (i / (totalParis - 1)) * graphWidth : graphWidth / 2;
-    const y = graphHeight - (val / maxPoints) * graphHeight;
-    return x + ',' + y;
-  });
-
-  const BADGE_ICONS: Record<string, string> = {
-    sniper: 'Sniper',
-    super_sniper: 'Super Sniper',
-    premiere_victoire: 'Premiere victoire',
-    leader: 'Leader',
-    champion_semaine: 'Champion semaine',
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex items-baseline justify-between">
@@ -76,45 +70,41 @@ export default async function Stats() {
       <section className="grid grid-cols-2 gap-3">
         <div className="rounded-2xl border border-sang bg-pitch p-4 text-center">
           <p className="font-mono text-3xl font-bold text-sang-vif">{rang?.total_points ?? 0}</p>
-          <p className="text-xs text-chalk/60 mt-1">points au total</p>
-          <p className="font-mono text-xs text-chalk/40 mt-1">
-            moy. equipe : {moyenneEquipe} pts
-          </p>
+          <p className="text-xs text-chalk/60 mt-1">points total</p>
+          <p className="font-mono text-xs text-chalk/40 mt-1">moy. equipe : {moyenneEquipe} pts</p>
         </div>
         <div className="rounded-2xl border border-ligne bg-ardoise p-4 text-center">
           <p className="font-mono text-3xl font-bold">
             {rang?.rang ? '#' + rang.rang : '-'}
           </p>
           <p className="text-xs text-chalk/60 mt-1">classement saison</p>
-          <p className="font-mono text-xs text-chalk/40 mt-1">
-            sur {allPlayers?.length ?? 0} joueurs
-          </p>
+          <p className="font-mono text-xs text-chalk/40 mt-1">sur {allPlayers?.length ?? 0} joueurs</p>
         </div>
       </section>
 
       <section className="grid grid-cols-3 gap-2 text-center">
         <div className="rounded-2xl border border-ligne bg-ardoise p-3">
           <p className="font-mono text-2xl font-bold text-green-400">{tauxReussite}%</p>
-          <p className="text-xs text-chalk/60">taux reussite</p>
+          <p className="text-xs text-chalk/60">reussite</p>
         </div>
         <div className="rounded-2xl border border-ligne bg-ardoise p-3">
           <p className="font-mono text-2xl font-bold text-yellow-400">{tauxExact}%</p>
-          <p className="text-xs text-chalk/60">scores exacts</p>
+          <p className="text-xs text-chalk/60">exacts</p>
         </div>
         <div className="rounded-2xl border border-ligne bg-ardoise p-3">
           <p className="font-mono text-2xl font-bold">{totalParis}</p>
-          <p className="text-xs text-chalk/60">paris joues</p>
+          <p className="text-xs text-chalk/60">paris</p>
         </div>
       </section>
 
       <section className="grid grid-cols-3 gap-2 text-center">
         <div className="rounded-2xl border border-ligne bg-ardoise p-3">
           <p className="font-mono text-xl font-bold text-green-400">{bonsResultats}</p>
-          <p className="text-xs text-chalk/60">bons resultats</p>
+          <p className="text-xs text-chalk/60">bons</p>
         </div>
         <div className="rounded-2xl border border-ligne bg-ardoise p-3">
           <p className="font-mono text-xl font-bold text-yellow-400">{scoresExacts}</p>
-          <p className="text-xs text-chalk/60">scores exacts</p>
+          <p className="text-xs text-chalk/60">exacts</p>
         </div>
         <div className="rounded-2xl border border-ligne bg-ardoise p-3">
           <p className="font-mono text-xl font-bold text-chalk/40">{mauvais}</p>
@@ -124,16 +114,14 @@ export default async function Stats() {
 
       {pointsCumules.length > 1 && (
         <section className="rounded-2xl border border-ligne bg-ardoise p-4">
-          <h2 className="font-display text-sm mb-3">PROGRESSION DES POINTS</h2>
+          <h2 className="font-display text-sm mb-3">PROGRESSION</h2>
           <svg viewBox={'0 0 ' + graphWidth + ' ' + graphHeight} className="w-full h-20">
-            <defs>
-              <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#C2272F" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#C2272F" stopOpacity="0" />
-              </linearGradient>
-            </defs>
             <polyline
-              points={points.join(' ')}
+              points={pointsCumules.map((val, i) => {
+                const x = totalParis > 1 ? (i / (totalParis - 1)) * graphWidth : graphWidth / 2;
+                const y = graphHeight - (val / maxPoints) * graphHeight;
+                return x + ',' + y;
+              }).join(' ')}
               fill="none"
               stroke="#C2272F"
               strokeWidth="2"
@@ -143,9 +131,7 @@ export default async function Stats() {
             {pointsCumules.map((val, i) => {
               const x = totalParis > 1 ? (i / (totalParis - 1)) * graphWidth : graphWidth / 2;
               const y = graphHeight - (val / maxPoints) * graphHeight;
-              return (
-                <circle key={i} cx={x} cy={y} r="3" fill="#C2272F" />
-              );
+              return <circle key={i} cx={x} cy={y} r="3" fill="#C2272F" />;
             })}
           </svg>
           <div className="flex justify-between font-mono text-xs text-chalk/40 mt-1">
@@ -160,11 +146,8 @@ export default async function Stats() {
           <h2 className="font-display text-sm mb-3">MES BADGES</h2>
           <div className="flex flex-wrap gap-2">
             {badges.map((b) => (
-              <span
-                key={b.id}
-                className="rounded-full border border-sang bg-sang/10 px-3 py-1 font-mono text-xs text-chalk"
-              >
-                {BADGE_ICONS[b.type] ?? b.label}
+              <span key={b.id} className="rounded-full border border-sang bg-sang/10 px-3 py-1 font-mono text-xs text-chalk">
+                {BADGE_LABELS[b.type] ?? b.label}
               </span>
             ))}
           </div>
@@ -183,11 +166,7 @@ export default async function Stats() {
                 <span className="font-mono text-xs mx-2 text-chalk/50">
                   {p.pred_home}-{p.pred_away}
                 </span>
-                <span className={
-                  'font-mono text-xs font-bold ' +
-                  (p.points === 3 ? 'text-yellow-400' :
-                   p.points === 1 ? 'text-green-400' : 'text-chalk/30')
-                }>
+                <span className={'font-mono text-xs font-bold ' + (p.points === 3 ? 'text-yellow-400' : p.points === 1 ? 'text-green-400' : 'text-chalk/30')}>
                   {p.points === 3 ? '+3' : p.points === 1 ? '+1' : '0'}
                 </span>
               </div>
