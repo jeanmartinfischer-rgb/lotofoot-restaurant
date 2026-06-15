@@ -6,6 +6,11 @@ import { createClient } from '@/lib/supabase-client';
 
 const AVATAR_COUNT = 100;
 
+function avatarSrc(val: string) {
+  if (val === 'admin') return '/avatar-admin.png';
+  return '/avatar-' + val + '.png';
+}
+
 export default function MonProfilClient({
   userId,
   initialPseudo,
@@ -27,6 +32,8 @@ export default function MonProfilClient({
   const [pwd2, setPwd2] = useState('');
   const [savingPwd, setSavingPwd] = useState(false);
   const [pwdMsg, setPwdMsg] = useState<string | null>(null);
+
+  const hasAvatar = avatar && (avatar === 'admin' || /^[0-9]+$/.test(avatar));
 
   async function saveInfo() {
     if (savingInfo) return;
@@ -76,8 +83,8 @@ export default function MonProfilClient({
 
       <section className="glass-gold rounded-2xl p-5 text-center space-y-3">
         <div className="w-24 h-24 mx-auto rounded-full overflow-hidden border-2 border-sang bg-ardoise flex items-center justify-center">
-          {avatar ? (
-            <img src={'/avatar-' + avatar + '.png'} alt="avatar" className="w-full h-full object-cover" />
+          {hasAvatar ? (
+            <img src={avatarSrc(avatar)} alt="avatar" className="w-full h-full object-cover" />
           ) : (
             <span className="font-display text-3xl text-chalk">{(pseudo || '?').charAt(0).toUpperCase()}</span>
           )}
