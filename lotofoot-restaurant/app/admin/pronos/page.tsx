@@ -7,13 +7,17 @@ export const dynamic = 'force-dynamic';
 export default async function AdminPronos({
   searchParams,
 }: {
-  searchParams: { view?: string; match_id?: string; user_id?: string; msg?: string };
+  searchParams: { view?: string; match_id?: string; user_id?: string };
 }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single();
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('is_admin')
+    .eq('id', user.id)
+    .single();
   if (!profile?.is_admin) {
     return (
       <p className="rounded-2xl border border-ligne bg-ardoise p-6 text-center text-sm text-chalk/60">
@@ -23,6 +27,9 @@ export default async function AdminPronos({
   }
 
   const admin = createAdmin();
+  const view = searchParams.view ?? 'match';
+  const selectedMatchId = searchParams.match_id ? parseInt(searchParams.match_id) : null;
+  const selectedUserId = searchParams.user_id ?? null;
 
   const { data: matches } = await admin
     .from('matches')
@@ -35,28 +42,28 @@ export default async function AdminPronos({
     .eq('is_suspended', false)
     .order('pseudo');
 
-  const view = searchParams.view ?? 'match';
-  const selectedMatchId = searchParams.match_id ? parseInt(searchParams.match_id) : null;
-  const selectedUserId = searchParams.user_id ?? null;
-
   let predictions: any[] = [];
-
   if (view === 'match' && selectedMatchId) {
     const { data } = await admin
       .from('predictions')
-      .select('*, profiles(pseudo)')
+      .select('*')
       .eq('match_id', selectedMatchId);
     predictions = data ?? [];
   }
-
   if (view === 'player' && selectedUserId) {
     const { data } = await admin
       .from('predictions')
-      .select('*, matches(home_team, away_team, kickoff, home_score, away_score, status)')
-      .eq('user_id', selectedUserId)
-      .order('match_id');
+      .select('*')
+      .eq('user_id', selectedUserId);
     predictions = data ?? [];
   }
+
+  const predMap = new Map(
+    predictions.map((p) => [
+      view === 'match' ? p.user_id : p.match_id,
+      p,
+    ])
+  );
 
   async function savePrediction(formData: FormData) {
     'use server';
@@ -65,6 +72,14 @@ export default async function AdminPronos({
     const matchId = parseInt(formData.get('match_id') as string);
     const predHome = parseInt(formData.get('pred_home') as string);
     const predAway = parseInt(formData.get('pred_away') as string);
+    const currentView = formData.get('current_view') as string;
+    const currentMatchId = formData.get('current_match_id') as string;
+    const currentUserId = formData.get('current_user_id') as string;
+
+    if (isNaN(predHome) || isNaN(predAway)) {
+      revalidatePath('/admin/pronos');
+      return;
+    }
 
     const { data: match } = await admin
       .from('matches')
@@ -98,28 +113,18 @@ export default async function AdminPronos({
       { onConflict: 'user_id,match_id' }
     );
 
-    revalidatePath('/admin/pronos');
+    const params = new URLSearchParams({ view: currentView });
+    if (currentMatchId) params.set('match_id', currentMatchId);
+    if (currentUserId) params.set('user_id', currentUserId);
+    redirect('/admin/pronos?' + params.toString());
   }
 
   const selectedMatch = matches?.find((m) => m.id === selectedMatchId);
   const selectedPlayer = players?.find((p) => p.id === selectedUserId);
 
-  const predMap = new Map(
-    predictions.map((p) => [
-      view === 'match' ? p.user_id : p.match_id,
-      p,
-    ])
-  );
-
   return (
     <div className="space-y-4">
-      <h1 className="font-display text-2xl">GESTION DES PRONOSTICS</h1>
-
-      {searchParams.msg && (
-        <p className="rounded-xl border border-sang bg-sang/10 p-3 text-center font-mono text-sm">
-          {searchParams.msg}
-        </p>
-      )}
+      <h1 className="font-display text-2xl">PRONOSTICS</h1>
 
       <div className="flex rounded-xl border border-ligne p-1 text-sm font-semibold">
         <a
@@ -137,33 +142,37 @@ export default async function AdminPronos({
       </div>
 
       {view === 'match' && (
-        <div className="space-y-4">
-          <select
-            onChange={(e) => {
-              if (typeof window !== 'undefined') {
-                window.location.href = '/admin/pronos?view=match&match_id=' + e.target.value;
-              }
-            }}
-            defaultValue={selectedMatchId ?? ''}
-            className="w-full rounded-xl border border-ligne bg-ardoise px-4 py-3 text-sm"
-          >
-            <option value="">Selectionnez un match...</option>
-            {matches?.map((m) => (
-              <option key={m.id} value={m.id}>
-                {new Date(m.kickoff).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', timeZone: 'Europe/Paris' })}
-                {' - '}
-                {m.home_team} vs {m.away_team}
-                {m.home_score !== null ? ` (${m.home_score}-${m.away_score})` : ''}
-              </option>
-            ))}
-          </select>
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <p className="text-xs text-chalk/60 font-semibold">Selectionnez un match :</p>
+            <div className="max-h-48 overflow-y-auto space-y-1 rounded-xl border border-ligne bg-ardoise p-2">
+              {matches?.map((m) => (
+                <a
+                  key={m.id}
+                  href={`/admin/pronos?view=match&match_id=${m.id}`}
+                  className={`block rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
+                    m.id === selectedMatchId
+                      ? 'bg-sang text-chalk'
+                      : 'text-chalk/70 hover:bg-ligne'
+                  }`}
+                >
+                  {new Date(m.kickoff).toLocaleDateString('fr-FR', {
+                    day: 'numeric', month: 'short', timeZone: 'Europe/Paris'
+                  })} — {m.home_team} vs {m.away_team}
+                  {m.home_score !== null ? ` (${m.home_score}-${m.away_score})` : ''}
+                </a>
+              ))}
+            </div>
+          </div>
 
           {selectedMatch && (
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="glass-gold rounded-2xl p-3 text-center">
-                <p className="font-display text-lg">{selectedMatch.home_team} vs {selectedMatch.away_team}</p>
+                <p className="font-display">{selectedMatch.home_team} vs {selectedMatch.away_team}</p>
                 {selectedMatch.home_score !== null && (
-                  <p className="font-mono text-sang-vif font-bold">Score reel: {selectedMatch.home_score}-{selectedMatch.away_score}</p>
+                  <p className="font-mono text-sang-vif font-bold text-sm">
+                    Score reel : {selectedMatch.home_score}-{selectedMatch.away_score}
+                  </p>
                 )}
               </div>
 
@@ -173,11 +182,16 @@ export default async function AdminPronos({
                   <form key={player.id} action={savePrediction} className="glass rounded-2xl p-3">
                     <input type="hidden" name="user_id" value={player.id} />
                     <input type="hidden" name="match_id" value={selectedMatch.id} />
+                    <input type="hidden" name="current_view" value="match" />
+                    <input type="hidden" name="current_match_id" value={selectedMatch.id} />
                     <div className="flex items-center gap-3">
                       <span className="flex-1 font-semibold text-sm">{player.pseudo}</span>
                       {pred?.points !== null && pred?.points !== undefined && (
-                        <span className={`font-mono text-xs font-bold ${pred.points === 3 ? 'text-yellow-400' : pred.points === 1 ? 'text-green-400' : 'text-chalk/40'}`}>
-                          {pred.points === 3 ? '🎯 3pts' : pred.points === 1 ? '✓ 1pt' : '✗ 0pt'}
+                        <span className={`font-mono text-xs font-bold ${
+                          pred.points === 3 ? 'text-yellow-400' :
+                          pred.points === 1 ? 'text-green-400' : 'text-chalk/40'
+                        }`}>
+                          {pred.points === 3 ? '3pts' : pred.points === 1 ? '1pt' : '0pt'}
                         </span>
                       )}
                       <input
@@ -206,44 +220,55 @@ export default async function AdminPronos({
       )}
 
       {view === 'player' && (
-        <div className="space-y-4">
-          <select
-            onChange={(e) => {
-              if (typeof window !== 'undefined') {
-                window.location.href = '/admin/pronos?view=player&user_id=' + e.target.value;
-              }
-            }}
-            defaultValue={selectedUserId ?? ''}
-            className="w-full rounded-xl border border-ligne bg-ardoise px-4 py-3 text-sm"
-          >
-            <option value="">Selectionnez un joueur...</option>
-            {players?.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.pseudo}
-              </option>
-            ))}
-          </select>
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <p className="text-xs text-chalk/60 font-semibold">Selectionnez un joueur :</p>
+            <div className="flex flex-wrap gap-2">
+              {players?.map((p) => (
+                <a
+                  key={p.id}
+                  href={`/admin/pronos?view=player&user_id=${p.id}`}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold border transition-colors ${
+                    p.id === selectedUserId
+                      ? 'bg-sang border-sang text-chalk'
+                      : 'border-ligne text-chalk/70 hover:border-chalk/40'
+                  }`}
+                >
+                  {p.pseudo}
+                </a>
+              ))}
+            </div>
+          </div>
 
           {selectedPlayer && (
             <div className="space-y-2">
-              <p className="font-display text-lg text-center">{selectedPlayer.pseudo}</p>
+              <p className="font-display text-center">{selectedPlayer.pseudo}</p>
               {matches?.map((match) => {
                 const pred = predMap.get(match.id) as any;
                 return (
                   <form key={match.id} action={savePrediction} className="glass rounded-2xl p-3">
                     <input type="hidden" name="user_id" value={selectedPlayer.id} />
                     <input type="hidden" name="match_id" value={match.id} />
+                    <input type="hidden" name="current_view" value="player" />
+                    <input type="hidden" name="current_user_id" value={selectedPlayer.id} />
                     <div className="flex items-center gap-2">
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold truncate">{match.home_team} vs {match.away_team}</p>
+                        <p className="text-xs font-semibold truncate">
+                          {match.home_team} vs {match.away_team}
+                        </p>
                         <p className="font-mono text-xs text-chalk/50">
-                          {new Date(match.kickoff).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', timeZone: 'Europe/Paris' })}
-                          {match.home_score !== null ? ` | Reel: ${match.home_score}-${match.away_score}` : ''}
+                          {new Date(match.kickoff).toLocaleDateString('fr-FR', {
+                            day: 'numeric', month: 'short', timeZone: 'Europe/Paris'
+                          })}
+                          {match.home_score !== null ? ` | ${match.home_score}-${match.away_score}` : ''}
                         </p>
                       </div>
                       {pred?.points !== null && pred?.points !== undefined && (
-                        <span className={`font-mono text-xs font-bold ${pred.points === 3 ? 'text-yellow-400' : pred.points === 1 ? 'text-green-400' : 'text-chalk/40'}`}>
-                          {pred.points === 3 ? '🎯' : pred.points === 1 ? '✓' : '✗'}
+                        <span className={`font-mono text-xs font-bold ${
+                          pred.points === 3 ? 'text-yellow-400' :
+                          pred.points === 1 ? 'text-green-400' : 'text-chalk/40'
+                        }`}>
+                          {pred.points === 3 ? '3' : pred.points === 1 ? '1' : '0'}
                         </span>
                       )}
                       <input
