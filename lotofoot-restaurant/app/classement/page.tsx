@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase-server';
 import Link from 'next/link';
 import Crown from '@/components/Crown';
 import PodiumRow from '@/components/PodiumRow';
+import Avatar from '@/components/Avatar';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,6 +48,7 @@ export default async function Classement({ searchParams }: { searchParams: { t?:
                 <span className="w-8 text-center font-mono font-bold text-lg">
                   {r.rang === 1 ? String.fromCodePoint(0x1F947) : r.rang === 2 ? String.fromCodePoint(0x1F948) : r.rang === 3 ? String.fromCodePoint(0x1F949) : '#' + r.rang}
                 </span>
+                <Avatar avatarUrl={r.avatar_url} pseudo={r.pseudo} size={40} />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold truncate flex items-center gap-1.5">
                     {r.rang === 1 && <Crown size={20} />}
