@@ -29,6 +29,9 @@ export async function GET(req: NextRequest) {
     matchs_termines: 0,
     events_importes: 0,
     points_calcules: 0,
+    defi_genere: false,
+    defis_resolus: 0,
+    streaks_maj: 0,
     errors: [] as string[],
   };
 
@@ -143,6 +146,135 @@ export async function GET(req: NextRequest) {
     }
   } catch (err) {
     results.errors.push('Erreur calcul points: ' + String(err));
+  }
+
+  // ============================================================
+  // ETAPE 4 : Generer le defi express du jour (s'il n'existe pas)
+  // ============================================================
+  try {
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' });
+
+    const { data: existing } = await admin
+      .from('daily_challenges')
+      .select('id')
+      .eq('challenge_date', today)
+      .maybeSingle();
+
+    if (!existing) {
+      const startOfDay = new Date(today + 'T00:00:00+02:00').toISOString();
+      const endOfDay = new Date(today + 'T23:59:59+02:00').toISOString();
+
+      const { data: candidate } = await admin
+        .from('matches')
+        .select('id, home_team, away_team, kickoff')
+        .eq('status', 'scheduled')
+        .gte('kickoff', startOfDay)
+        .lte('kickoff', endOfDay)
+        .order('kickoff', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (candidate) {
+        const types = ['over25', 'goals_range', 'red_card'] as const;
+        const type = types[Math.floor(Math.random() * types.length)];
+        const affiche = candidate.home_team + ' - ' + candidate.away_team;
+
+        let question = '';
+        let options: string[] = [];
+        if (type === 'over25') {
+          question = 'Plus de 2,5 buts dans ' + affiche + ' ?';
+          options = ['Oui', 'Non'];
+        } else if (type === 'goals_range') {
+          question = 'Combien de buts au total dans ' + affiche + ' ?';
+          options = ['0-1', '2-3', '4+'];
+        } else {
+          question = 'Y aura-t-il un carton rouge dans ' + affiche + ' ?';
+          options = ['Oui', 'Non'];
+        }
+
+        await admin.from('daily_challenges').insert({
+          challenge_date: today,
+          match_id: candidate.id,
+          type,
+          question,
+          options,
+          locks_at: candidate.kickoff,
+        });
+        results.defi_genere = true;
+      }
+    }
+  } catch (err) {
+    results.errors.push('Erreur generation defi: ' + String(err));
+  }
+
+  // ============================================================
+  // ETAPE 5 : Resoudre les defis dont le match est termine
+  //           + mettre a jour les streaks des joueurs
+  // ============================================================
+  try {
+    const { data: toResolve } = await admin
+      .from('daily_challenges')
+      .select('id, type, match_id, matches!inner(home_score, away_score, status)')
+      .eq('resolved', false)
+      .eq('matches.status', 'finished');
+
+    for (const ch of toResolve ?? []) {
+      const m = (ch as any).matches;
+      if (m.home_score === null || m.away_score === null) continue;
+
+      const total = m.home_score + m.away_score;
+
+      let correct = '';
+      if (ch.type === 'over25') {
+        correct = total > 2 ? 'Oui' : 'Non';
+      } else if (ch.type === 'goals_range') {
+        correct = total <= 1 ? '0-1' : total <= 3 ? '2-3' : '4+';
+      } else if (ch.type === 'red_card') {
+        const { count: redCount } = await admin
+          .from('match_events')
+          .select('*', { count: 'exact', head: true })
+          .eq('match_id', ch.match_id)
+          .ilike('detail', '%Red Card%');
+        correct = (redCount ?? 0) > 0 ? 'Oui' : 'Non';
+      }
+
+      const { data: answers } = await admin
+        .from('daily_challenge_answers')
+        .select('id, user_id, answer')
+        .eq('challenge_id', ch.id);
+
+      for (const a of answers ?? []) {
+        const ok = a.answer === correct;
+        await admin
+          .from('daily_challenge_answers')
+          .update({ is_correct: ok })
+          .eq('id', a.id);
+
+        const { data: prof } = await admin
+          .from('profiles')
+          .select('streak_current, streak_best')
+          .eq('id', a.user_id)
+          .maybeSingle();
+
+        if (prof) {
+          const newCurrent = ok ? (prof.streak_current ?? 0) + 1 : 0;
+          const newBest = Math.max(prof.streak_best ?? 0, newCurrent);
+          await admin
+            .from('profiles')
+            .update({ streak_current: newCurrent, streak_best: newBest })
+            .eq('id', a.user_id);
+          results.streaks_maj++;
+        }
+      }
+
+      await admin
+        .from('daily_challenges')
+        .update({ resolved: true, correct_answer: correct })
+        .eq('id', ch.id);
+      results.defis_resolus++;
+    }
+  } catch (err) {
+    results.errors.push('Erreur resolution defi: ' + String(err));
   }
 
   return NextResponse.json({
