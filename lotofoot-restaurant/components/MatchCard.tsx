@@ -59,11 +59,15 @@ export default function MatchCard({ match, prediction, userId }: {
   const [away, setAway] = useState<number | ''>(prediction?.pred_away ?? '');
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+  // Etape : la zone de pari est-elle ouverte ?
+  const [open, setOpen] = useState(false);
 
   const myOutcome: Outcome | null =
     home !== '' && away !== '' ? outcomeFromScore(Number(home), Number(away)) : null;
 
-  async function save(h: number, a: number) {
+  const aParie = prediction !== null;
+
+  async function save(h: number, a: number, refermer = false) {
     setError('');
     const supabase = createClient();
     const { error } = await supabase
@@ -73,19 +77,25 @@ export default function MatchCard({ match, prediction, userId }: {
         { onConflict: 'user_id,match_id' }
       );
     if (error) setError('Enregistrement impossible. Reessayez.');
-    else { setSaved(true); setTimeout(() => setSaved(false), 1500); }
+    else {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+      if (refermer) setOpen(false);
+    }
   }
 
   function pickOutcome(o: Outcome) {
     const presets: Record<Outcome, [number, number]> = { '1': [2, 1], 'N': [1, 1], '2': [1, 2] };
     const [h, a] = presets[o];
     setHome(h); setAway(a);
-    save(h, a);
   }
 
-  function onScoreBlur() {
-    if (home === '' || away === '') return;
-    save(Number(home), Number(away));
+  function valider() {
+    if (home === '' || away === '') {
+      setError('Choisis un pronostic avant de valider.');
+      return;
+    }
+    save(Number(home), Number(away), true);
   }
 
   const isLive = match.status === 'live' || match.status === 'halftime';
@@ -123,43 +133,94 @@ export default function MatchCard({ match, prediction, userId }: {
         <span className="flex-1 truncate text-right font-semibold">{match.away_team}</span>
       </div>
 
-      <div className="mb-3 flex items-center justify-center gap-4">
-        {(['1', 'N', '2'] as Outcome[]).map((o) => (
-          <button
-            key={o}
-            disabled={locked}
-            onClick={() => pickOutcome(o)}
-            className={'pick' + (myOutcome === o ? ' pick--on' : '')}
-          >
-            {o}
-          </button>
-        ))}
-      </div>
+      {/* ZONE DE PARI - matchs a venir uniquement */}
+      {!locked && (
+        <>
+          {/* ETAPE 1 : bouton replie */}
+          {!open && (
+            <button
+              onClick={() => setOpen(true)}
+              className={
+                'block w-full rounded-xl border py-3 text-center font-mono text-sm transition-colors ' +
+                (aParie
+                  ? 'border-ligne text-chalk/70 hover:text-chalk hover:border-chalk/40'
+                  : 'border-sang bg-sang/15 text-chalk hover:border-sang-vif')
+              }
+            >
+              {aParie
+                ? 'Mon pari : ' + prediction!.pred_home + ' - ' + prediction!.pred_away + ' (modifier)'
+                : 'Parier'}
+            </button>
+          )}
 
-      <div className="flex items-center justify-center gap-2">
-        <label className="font-mono text-xs text-chalk/60">Score exact (3 pts) :</label>
-        <input
-          type="number" min={0} max={20} inputMode="numeric" disabled={locked}
-          value={home}
-          onChange={(e) => setHome(e.target.value === '' ? '' : Number(e.target.value))}
-          onBlur={onScoreBlur}
-          className="w-12 rounded-lg border border-ligne bg-pitch px-2 py-1 text-center font-mono font-bold disabled:opacity-40"
-        />
-        <span className="text-chalk/40">-</span>
-        <input
-          type="number" min={0} max={20} inputMode="numeric" disabled={locked}
-          value={away}
-          onChange={(e) => setAway(e.target.value === '' ? '' : Number(e.target.value))}
-          onBlur={onScoreBlur}
-          className="w-12 rounded-lg border border-ligne bg-pitch px-2 py-1 text-center font-mono font-bold disabled:opacity-40"
-        />
-      </div>
+          {/* ETAPE 2 + 3 : choix + validation */}
+          {open && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-center gap-4">
+                {(['1', 'N', '2'] as Outcome[]).map((o) => (
+                  <button
+                    key={o}
+                    onClick={() => pickOutcome(o)}
+                    className={'pick' + (myOutcome === o ? ' pick--on' : '')}
+                  >
+                    {o}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center justify-center gap-2">
+                <label className="font-mono text-xs text-chalk/60">Score exact (3 pts) :</label>
+                <input
+                  type="number" min={0} max={20} inputMode="numeric"
+                  value={home}
+                  onChange={(e) => setHome(e.target.value === '' ? '' : Number(e.target.value))}
+                  className="w-12 rounded-lg border border-ligne bg-pitch px-2 py-1 text-center font-mono font-bold"
+                />
+                <span className="text-chalk/40">-</span>
+                <input
+                  type="number" min={0} max={20} inputMode="numeric"
+                  value={away}
+                  onChange={(e) => setAway(e.target.value === '' ? '' : Number(e.target.value))}
+                  className="w-12 rounded-lg border border-ligne bg-pitch px-2 py-1 text-center font-mono font-bold"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setOpen(false)}
+                  className="flex-1 rounded-xl border border-ligne py-2.5 font-mono text-sm text-chalk/60 hover:text-chalk transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={valider}
+                  className="flex-[2] rounded-xl border border-sang bg-sang/15 py-2.5 font-mono text-sm font-bold text-chalk hover:border-sang-vif transition-colors"
+                >
+                  Valider mon pari
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Matchs verrouilles : on montre le pari fait (lecture seule) */}
+      {locked && aParie && !isOver && (
+        <p className="rounded-xl border border-ligne bg-pitch p-2 text-center font-mono text-sm text-chalk/70">
+          Ton pari : <b className="text-chalk">{prediction!.pred_home} - {prediction!.pred_away}</b>
+        </p>
+      )}
+      {locked && !aParie && !isOver && (
+        <p className="rounded-xl border border-ligne bg-pitch p-2 text-center font-mono text-xs text-chalk/40">
+          Paris clotures
+        </p>
+      )}
 
       {saved && <p className="mt-2 text-center font-mono text-xs font-bold text-green-400">Pronostic enregistre</p>}
       {error && <p className="mt-2 text-center font-mono text-xs text-sang-vif">{error}</p>}
 
       {isOver && (
-        <a
+        
           href={'/matchs/' + match.id}
           className="mt-3 block w-full rounded-xl border border-ligne py-2 text-center font-mono text-xs text-chalk/60 hover:text-chalk hover:border-chalk/40"
         >
