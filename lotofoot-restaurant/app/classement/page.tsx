@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase-server';
 import Link from 'next/link';
 import Crown from '@/components/Crown';
+import PodiumRow from '@/components/PodiumRow';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,11 +34,7 @@ export default async function Classement({ searchParams }: { searchParams: { t?:
       <h1 className="font-display text-2xl">CLASSEMENT</h1>
       <nav className="flex rounded-xl bg-ardoise border border-ligne p-1 text-sm font-semibold">
         {TABS.map((t) => (
-          <a
-            key={t.key}
-            href={'/classement?t=' + t.key}
-            className={'flex-1 rounded-lg py-2 text-center ' + (t.key === tab.key ? 'bg-sang text-chalk' : 'text-chalk/60 hover:text-chalk')}
-          >
+          <a key={t.key} href={'/classement?t=' + t.key} className={'flex-1 rounded-lg py-2 text-center ' + (t.key === tab.key ? 'bg-sang text-chalk' : 'text-chalk/60 hover:text-chalk')}>
             {t.label}
           </a>
         ))}
@@ -45,28 +42,25 @@ export default async function Classement({ searchParams }: { searchParams: { t?:
       <ol className="space-y-2">
         {rows?.map((r) => (
           <li key={r.user_id}>
-            <Link
-              href={'/profil/' + r.user_id}
-              className={'flex items-center gap-3 rounded-2xl border p-3 transition-colors hover:border-chalk/40 ' + (r.rang <= 3 ? 'border-sang bg-pitch' : 'border-ligne bg-ardoise')}
-            >
-              <span className="w-8 text-center font-mono font-bold text-lg">
-                {r.rang === 1 ? String.fromCodePoint(0x1F947) : r.rang === 2 ? String.fromCodePoint(0x1F948) : r.rang === 3 ? String.fromCodePoint(0x1F949) : '#' + r.rang}
-              </span>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold truncate flex items-center gap-1.5">
-                  {r.rang === 1 && <Crown size={20} />}
-                  <span className="truncate">{r.pseudo}</span>
-                </p>
-                {badgesByUser.get(r.user_id) && (
-                  <p className="text-xs text-chalk/50 mt-0.5">
-                    {badgesByUser.get(r.user_id)!.join(' | ')}
+            <PodiumRow rang={r.rang}>
+              <Link href={'/profil/' + r.user_id} className="flex items-center gap-3 p-3 w-full">
+                <span className="w-8 text-center font-mono font-bold text-lg">
+                  {r.rang === 1 ? String.fromCodePoint(0x1F947) : r.rang === 2 ? String.fromCodePoint(0x1F948) : r.rang === 3 ? String.fromCodePoint(0x1F949) : '#' + r.rang}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold truncate flex items-center gap-1.5">
+                    {r.rang === 1 && <Crown size={20} />}
+                    <span className="truncate">{r.pseudo}</span>
                   </p>
-                )}
-              </div>
-              <span className="font-mono text-xs text-chalk/60">{r.exact_scores} exacts</span>
-              <span className="font-mono text-lg font-bold text-sang-vif">{r.total_points}</span>
-              <span className="text-chalk/30 text-xs">{String.fromCharCode(8594)}</span>
-            </Link>
+                  {badgesByUser.get(r.user_id) && (
+                    <p className="text-xs text-chalk/50 mt-0.5">{badgesByUser.get(r.user_id)!.join(' | ')}</p>
+                  )}
+                </div>
+                <span className="font-mono text-xs text-chalk/60">{r.exact_scores} exacts</span>
+                <span className="font-mono text-lg font-bold text-sang-vif">{r.total_points}</span>
+                <span className="text-chalk/30 text-xs">{String.fromCharCode(8594)}</span>
+              </Link>
+            </PodiumRow>
           </li>
         ))}
         {!rows?.length && (
