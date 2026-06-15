@@ -7,8 +7,8 @@ export default function Splash() {
   const [gone, setGone] = useState(false);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setHidden(true), 900);
-    const t2 = setTimeout(() => setGone(true), 1500);
+    const t1 = setTimeout(() => setHidden(true), 2200);
+    const t2 = setTimeout(() => setGone(true), 3000);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
@@ -20,7 +20,7 @@ export default function Splash() {
       style={{
         background: '#0B0B0D',
         opacity: hidden ? 0 : 1,
-        transition: 'opacity 0.6s ease',
+        transition: 'opacity 0.8s ease',
         pointerEvents: hidden ? 'none' : 'auto',
       }}
     >
@@ -37,18 +37,18 @@ export default function Splash() {
           60% { transform: scale(1.05); opacity: 1; }
           100% { transform: scale(1); opacity: 1; }
         }
-        .splash-logo { animation: splashPop 0.6s ease-out; }
+        .splash-logo { animation: splashPop 0.7s ease-out; }
         @keyframes splashLoad {
           0% { width: 0%; }
           100% { width: 100%; }
         }
         .splash-bar {
           margin-top: 22px;
-          width: 120px;
+          width: 140px;
           height: 3px;
           border-radius: 3px;
           background: linear-gradient(90deg, #C2272F, #D4AF37);
-          animation: splashLoad 1s ease-out forwards;
+          animation: splashLoad 2s ease-out forwards;
         }
       `}</style>
     </div>
