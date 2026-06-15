@@ -9,11 +9,11 @@ const TABS = [
 ] as const;
 
 const BADGE_ICONS: Record<string, string> = {
-  sniper: '🎯',
-  super_sniper: '🎯🎯',
-  premiere_victoire: '🌟',
-  leader: '👑',
-  champion_semaine: '🏆',
+  sniper: 'Sniper',
+  super_sniper: 'Super Sniper',
+  premiere_victoire: 'Premiere victoire',
+  leader: 'Leader',
+  champion_semaine: 'Champion semaine',
 };
 
 export default async function Classement({ searchParams }: { searchParams: { t?: string } }) {
@@ -25,7 +25,7 @@ export default async function Classement({ searchParams }: { searchParams: { t?:
   const badgesByUser = new Map<string, string[]>();
   for (const b of badges ?? []) {
     if (!badgesByUser.has(b.user_id)) badgesByUser.set(b.user_id, []);
-    badgesByUser.get(b.user_id)!.push(BADGE_ICONS[b.type] ?? '🏅');
+    badgesByUser.get(b.user_id)!.push(BADGE_ICONS[b.type] ?? b.label);
   }
 
   return (
@@ -34,7 +34,7 @@ export default async function Classement({ searchParams }: { searchParams: { t?:
 
       <nav className="flex rounded-xl bg-ardoise border border-ligne p-1 text-sm font-semibold">
         {TABS.map((t) => (
-          
+          <a
             key={t.key}
             href={'/classement?t=' + t.key}
             className={'flex-1 rounded-lg py-2 text-center ' + (t.key === tab.key ? 'bg-sang text-chalk' : 'text-chalk/60 hover:text-chalk')}
@@ -51,17 +51,17 @@ export default async function Classement({ searchParams }: { searchParams: { t?:
             className={'flex items-center gap-3 rounded-2xl border p-3 ' + (r.rang <= 3 ? 'border-sang bg-pitch' : 'border-ligne bg-ardoise')}
           >
             <span className="w-8 text-center font-mono font-bold text-lg">
-              {r.rang === 1 ? '🥇' : r.rang === 2 ? '🥈' : r.rang === 3 ? '🥉' : '#' + r.rang}
+              {r.rang === 1 ? '#1' : r.rang === 2 ? '#2' : r.rang === 3 ? '#3' : '#' + r.rang}
             </span>
             <div className="flex-1 min-w-0">
               <p className="font-semibold truncate">{r.pseudo}</p>
-              {badgesByUser.get(r.user_id)?.length && (
+              {badgesByUser.get(r.user_id) && (
                 <p className="text-xs text-chalk/50 mt-0.5">
-                  {badgesByUser.get(r.user_id)!.join(' ')}
+                  {badgesByUser.get(r.user_id)!.join(' | ')}
                 </p>
               )}
             </div>
-            <span className="font-mono text-xs text-chalk/60">🎯 {r.exact_scores}</span>
+            <span className="font-mono text-xs text-chalk/60">{r.exact_scores} exacts</span>
             <span className="font-mono text-lg font-bold text-sang-vif">{r.total_points}</span>
           </li>
         ))}
@@ -72,14 +72,14 @@ export default async function Classement({ searchParams }: { searchParams: { t?:
         )}
       </ol>
 
-      <div className="glass rounded-2xl p-3">
-        <h2 className="font-display text-xs text-chalk/50 mb-2">LEGENDE DES BADGES</h2>
-        <div className="grid grid-cols-2 gap-1 text-xs text-chalk/60">
-          <span>🎯 Sniper — 1 score exact</span>
-          <span>🎯🎯 Super Sniper — 3 exacts</span>
-          <span>🌟 Premiere victoire</span>
-          <span>👑 Leader — 1er saison</span>
-          <span>🏆 Champion semaine</span>
+      <div className="rounded-2xl border border-ligne bg-ardoise p-3">
+        <h2 className="font-display text-xs text-chalk/50 mb-2">BADGES</h2>
+        <div className="space-y-1 text-xs text-chalk/60">
+          <p>Sniper — 1 score exact</p>
+          <p>Super Sniper — 3 scores exacts</p>
+          <p>Premiere victoire — 1er bon resultat</p>
+          <p>Leader — 1er du classement saison</p>
+          <p>Champion semaine — 1er du classement semaine</p>
         </div>
       </div>
     </div>
