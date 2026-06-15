@@ -2,10 +2,9 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
 import MatchCard from '@/components/MatchCard';
+import Crown from '@/components/Crown';
 
 export const dynamic = 'force-dynamic';
-
-const TZ = 'Europe/Paris';
 
 export default async function Home() {
   const supabase = createClient();
@@ -13,8 +12,9 @@ export default async function Home() {
   if (!user) redirect('/login');
 
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-  const { data: rangs } = await supabase.from('leaderboard_season').select('*');
+  const { data: rangs } = await supabase.from('leaderboard_season').select('*').order('rang');
   const me = rangs?.find((r: any) => r.user_id === user.id);
+  const top3 = (rangs ?? []).slice(0, 3);
 
   const now = new Date().toISOString();
   const in48h = new Date(Date.now() + 48 * 3600000).toISOString();
@@ -36,12 +36,21 @@ export default async function Home() {
     .eq('user_id', user.id);
 
   const predByMatch = new Map((preds ?? []).map((p: any) => [p.match_id, p]));
+  const streak = profile?.streak_current ?? 0;
 
   return (
     <div className="space-y-6">
-      <section>
-        <p className="font-mono text-xs uppercase tracking-widest text-chalk/50">Bonjour</p>
-        <h1 className="font-display text-3xl">{profile?.pseudo ?? 'Joueur'}</h1>
+      <section className="flex items-end justify-between">
+        <div>
+          <p className="font-mono text-xs uppercase tracking-widest text-chalk/50">Bonjour</p>
+          <h1 className="font-display text-3xl">{profile?.pseudo ?? 'Joueur'}</h1>
+        </div>
+        {streak > 0 && (
+          <div className="rounded-2xl border border-sang bg-sang/10 px-3 py-2 text-center">
+            <p className="font-mono text-xl font-bold text-sang-vif">{String.fromCodePoint(0x1F525)} {streak}</p>
+            <p className="text-[10px] text-chalk/60">serie en cours</p>
+          </div>
+        )}
       </section>
 
       <section className="grid grid-cols-3 gap-3 text-center">
@@ -59,6 +68,29 @@ export default async function Home() {
         </div>
       </section>
 
+      {top3.length > 0 && (
+        <section>
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="font-display text-sm">PODIUM</h2>
+            <Link href="/classement" className="text-xs font-semibold text-sang-vif">Classement complet</Link>
+          </div>
+          <div className="space-y-2">
+            {top3.map((r: any) => (
+              <Link key={r.user_id} href={'/profil/' + r.user_id} className="flex items-center gap-3 rounded-xl border border-ligne bg-ardoise p-2.5">
+                <span className="w-7 text-center font-mono font-bold">
+                  {r.rang === 1 ? String.fromCodePoint(0x1F947) : r.rang === 2 ? String.fromCodePoint(0x1F948) : String.fromCodePoint(0x1F949)}
+                </span>
+                <span className="flex-1 min-w-0 truncate font-semibold flex items-center gap-1.5">
+                  {r.rang === 1 && <Crown size={18} />}
+                  <span className="truncate">{r.pseudo}</span>
+                </span>
+                <span className="font-mono text-sm font-bold text-sang-vif">{r.total_points}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       {liveMatches && liveMatches.length > 0 && (
         <section>
           <h2 className="font-display text-sm mb-3 flex items-center gap-2">
@@ -71,12 +103,8 @@ export default async function Home() {
                 <div className="flex items-center justify-between gap-2">
                   <span className="flex-1 truncate font-semibold text-sm">{m.home_team}</span>
                   <div className="text-center">
-                    <p className="font-mono text-2xl font-bold text-sang-vif">
-                      {m.home_score ?? 0} - {m.away_score ?? 0}
-                    </p>
-                    <span className="font-mono text-xs font-bold text-sang-vif animate-pulse">
-                      {m.status === 'halftime' ? 'MI-TEMPS' : 'LIVE'}
-                    </span>
+                    <p className="font-mono text-2xl font-bold text-sang-vif">{m.home_score ?? 0} - {m.away_score ?? 0}</p>
+                    <span className="font-mono text-xs font-bold text-sang-vif animate-pulse">{m.status === 'halftime' ? 'MI-TEMPS' : 'LIVE'}</span>
                   </div>
                   <span className="flex-1 truncate text-right font-semibold text-sm">{m.away_team}</span>
                 </div>
@@ -112,12 +140,7 @@ export default async function Home() {
         )}
         <div className="space-y-4">
           {prochains?.map((m: any) => (
-            <MatchCard
-              key={m.id}
-              match={m}
-              prediction={predByMatch.get(m.id) ?? null}
-              userId={user.id}
-            />
+            <MatchCard key={m.id} match={m} prediction={predByMatch.get(m.id) ?? null} userId={user.id} />
           ))}
         </div>
       </section>
