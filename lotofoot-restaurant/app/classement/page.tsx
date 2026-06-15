@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase-server';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,12 +9,12 @@ const TABS = [
   { key: 'season', label: 'Saison', view: 'leaderboard_season' },
 ] as const;
 
-const BADGE_ICONS: Record<string, { icon: string; label: string }> = {
-  sniper:           { icon: '🎯', label: 'Sniper' },
-  super_sniper:     { icon: '🎯🎯', label: 'Super Sniper' },
-  premiere_victoire:{ icon: '🌟', label: 'Premiere victoire' },
-  leader:           { icon: '👑', label: 'Leader' },
-  champion_semaine: { icon: '🏆', label: 'Champion semaine' },
+const BADGE_LABELS: Record<string, string> = {
+  sniper: 'Sniper',
+  super_sniper: 'Super Sniper',
+  premiere_victoire: 'Premiere victoire',
+  leader: 'Leader',
+  champion_semaine: 'Champion semaine',
 };
 
 export default async function Classement({ searchParams }: { searchParams: { t?: string } }) {
@@ -25,8 +26,7 @@ export default async function Classement({ searchParams }: { searchParams: { t?:
   const badgesByUser = new Map<string, string[]>();
   for (const b of badges ?? []) {
     if (!badgesByUser.has(b.user_id)) badgesByUser.set(b.user_id, []);
-    const badge = BADGE_ICONS[b.type];
-    badgesByUser.get(b.user_id)!.push(badge ? badge.icon : 'X');
+    badgesByUser.get(b.user_id)!.push(BADGE_LABELS[b.type] ?? b.label);
   }
 
   return (
@@ -47,23 +47,30 @@ export default async function Classement({ searchParams }: { searchParams: { t?:
 
       <ol className="space-y-2">
         {rows?.map((r) => (
-          <li
-            key={r.user_id}
-            className={'flex items-center gap-3 rounded-2xl border p-3 ' + (r.rang <= 3 ? 'border-sang bg-pitch' : 'border-ligne bg-ardoise')}
-          >
-            <span className="w-8 text-center font-mono font-bold text-lg">
-              {r.rang === 1 ? String.fromCodePoint(0x1F947) : r.rang === 2 ? String.fromCodePoint(0x1F948) : r.rang === 3 ? String.fromCodePoint(0x1F949) : '#' + r.rang}
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold truncate">{r.pseudo}</p>
-              {badgesByUser.get(r.user_id) && (
-                <p className="text-sm mt-0.5">
-                  {badgesByUser.get(r.user_id)!.join(' ')}
-                </p>
-              )}
-            </div>
-            <span className="font-mono text-xs text-chalk/60">{r.exact_scores} exacts</span>
-            <span className="font-mono text-lg font-bold text-sang-vif">{r.total_points}</span>
+          <li key={r.user_id}>
+            <Link
+              href={'/profil/' + r.user_id}
+              className={'flex items-center gap-3 rounded-2xl border p-3 transition-colors hover:border-chalk/40 ' +
+                (r.rang <= 3 ? 'border-sang bg-pitch' : 'border-ligne bg-ardoise')}
+            >
+              <span className="w-8 text-center font-mono font-bold text-lg">
+                {r.rang === 1 ? String.fromCodePoint(0x1F947) :
+                 r.rang === 2 ? String.fromCodePoint(0x1F948) :
+                 r.rang === 3 ? String.fromCodePoint(0x1F949) :
+                 '#' + r.rang}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold truncate">{r.pseudo}</p>
+                {badgesByUser.get(r.user_id) && (
+                  <p className="text-xs text-chalk/50 mt-0.5">
+                    {badgesByUser.get(r.user_id)!.join(' | ')}
+                  </p>
+                )}
+              </div>
+              <span className="font-mono text-xs text-chalk/60">{r.exact_scores} exacts</span>
+              <span className="font-mono text-lg font-bold text-sang-vif">{r.total_points}</span>
+              <span className="text-chalk/30 text-xs">→</span>
+            </Link>
           </li>
         ))}
         {!rows?.length && (
@@ -76,11 +83,11 @@ export default async function Classement({ searchParams }: { searchParams: { t?:
       <div className="rounded-2xl border border-ligne bg-ardoise p-3">
         <h2 className="font-display text-xs text-chalk/50 mb-2">BADGES</h2>
         <div className="space-y-1 text-xs text-chalk/60">
-          <p>{String.fromCodePoint(0x1F3AF)} Sniper — 1 score exact</p>
-          <p>{String.fromCodePoint(0x1F3AF)}{String.fromCodePoint(0x1F3AF)} Super Sniper — 3 scores exacts</p>
-          <p>{String.fromCodePoint(0x1F31F)} Premiere victoire — 1er bon resultat</p>
-          <p>{String.fromCodePoint(0x1F451)} Leader — 1er du classement saison</p>
-          <p>{String.fromCodePoint(0x1F3C6)} Champion semaine — 1er du classement semaine</p>
+          <p>Sniper — 1 score exact</p>
+          <p>Super Sniper — 3 scores exacts</p>
+          <p>Premiere victoire — 1er bon resultat</p>
+          <p>Leader — 1er du classement saison</p>
+          <p>Champion semaine — 1er du classement semaine</p>
         </div>
       </div>
     </div>
