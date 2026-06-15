@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase-server';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,10 +18,10 @@ export default async function Classement({ searchParams }: { searchParams: { t?:
     <div className="space-y-4">
       <h1 className="font-display text-2xl">CLASSEMENT</h1>
 
-      <nav className="flex rounded-xl border border-ligne p-1 text-sm font-semibold">
+      <nav className="flex rounded-xl bg-ardoise border border-ligne p-1 text-sm font-semibold">
         {TABS.map((t) => (
-          <a key={t.key} href={`/classement?t=${t.key}`}
-            className={`flex-1 rounded-lg py-2 text-center ${t.key === tab.key ? 'bg-sang' : 'text-chalk/60'}`}>
+          <a key={t.key} href={'/classement?t=' + t.key}
+            className={'flex-1 rounded-lg py-2 text-center ' + (t.key === tab.key ? 'bg-sang text-chalk' : 'text-chalk/60 hover:text-chalk')}>
             {t.label}
           </a>
         ))}
@@ -29,9 +30,9 @@ export default async function Classement({ searchParams }: { searchParams: { t?:
       <ol className="space-y-2">
         {rows?.map((r) => (
           <li key={r.user_id}
-            className={`flex items-center gap-3 rounded-2xl border p-3 ${r.rang <= 3 ? 'border-sang bg-sang/10' : 'border-ligne bg-ardoise'}`}>
-            <span className="w-8 text-center font-mono font-bold">
-              {r.rang === 1 ? '🥇' : r.rang === 2 ? '🥈' : r.rang === 3 ? '🥉' : `#${r.rang}`}
+            className={'flex items-center gap-3 rounded-2xl border p-3 ' + (r.rang <= 3 ? 'border-sang bg-pitch' : 'border-ligne bg-ardoise')}>
+            <span className="w-8 text-center font-mono font-bold text-lg">
+              {r.rang === 1 ? '🥇' : r.rang === 2 ? '🥈' : r.rang === 3 ? '🥉' : '#' + r.rang}
             </span>
             <span className="flex-1 truncate font-semibold">{r.pseudo}</span>
             <span className="font-mono text-xs text-chalk/60">🎯 {r.exact_scores}</span>
@@ -40,10 +41,5 @@ export default async function Classement({ searchParams }: { searchParams: { t?:
         ))}
         {!rows?.length && (
           <p className="rounded-2xl border border-ligne bg-ardoise p-6 text-center text-sm text-chalk/60">
-            Le classement apparaîtra après le premier match terminé.
+            Le classement apparaitra apres le premier match termine.
           </p>
-        )}
-      </ol>
-    </div>
-  );
-}
