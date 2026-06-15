@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
+import Crown from '@/components/Crown';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,11 +58,14 @@ export default async function Profil({ params }: { params: { id: string } }) {
   const bonsResultats = preds?.filter((p: any) => p.is_correct_result).length ?? 0;
   const scoresExacts = preds?.filter((p: any) => p.is_exact_score).length ?? 0;
   const tauxReussite = totalParis > 0 ? Math.round((bonsResultats / totalParis) * 100) : 0;
+  const mesPoints = rang?.total_points ?? 0;
   const moyenneEquipe = allPlayers && allPlayers.length > 0
     ? Math.round(allPlayers.reduce((sum, p) => sum + (p.total_points ?? 0), 0) / allPlayers.length)
     : 0;
+  const ecart = mesPoints - moyenneEquipe;
 
   const isMe = user.id === params.id;
+  const isLeader = rang?.rang === 1;
 
   function MatchLine({ match }: { match: any }) {
     const pred = predByMatch.get(match.id);
@@ -129,20 +133,34 @@ export default async function Profil({ params }: { params: { id: string } }) {
         Retour au classement
       </a>
 
-      <div className="glass-gold rounded-2xl p-5 text-center space-y-2">
-        <div className="w-16 h-16 rounded-full bg-sang flex items-center justify-center mx-auto font-display text-2xl text-chalk">
-          {profile.pseudo.charAt(0).toUpperCase()}
+      <div className="glass-gold rounded-2xl p-5 text-center space-y-2" style={{ boxShadow: '0 0 30px 0 rgba(212,175,55,0.18)' }}>
+        <div className="relative w-20 h-20 mx-auto">
+          <div className="w-20 h-20 rounded-full bg-sang flex items-center justify-center font-display text-3xl text-chalk" style={isLeader ? { boxShadow: '0 0 0 3px #F5C542, 0 0 18px 2px rgba(245,197,66,0.5)' } : undefined}>
+            {profile.pseudo.charAt(0).toUpperCase()}
+          </div>
+          {isLeader && (
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+              <Crown size={26} />
+            </div>
+          )}
         </div>
         <h1 className="font-display text-2xl">{profile.pseudo}</h1>
-        {isMe && <p className="font-mono text-xs text-chalk/40">C'est toi !</p>}
+        {isMe && <p className="inline-block rounded-full border border-sang bg-sang/10 px-3 py-0.5 font-mono text-xs text-chalk/70">C'est toi !</p>}
         {rang?.rang && (
           <p className="font-mono text-lg font-bold text-sang-vif">#{rang.rang} au classement</p>
         )}
+        <div className="flex items-center justify-center gap-2 text-xs">
+          {ecart >= 0 ? (
+            <span className="font-mono text-green-400">{String.fromCharCode(8593)} +{ecart} pts vs moyenne</span>
+          ) : (
+            <span className="font-mono text-chalk/50">{String.fromCharCode(8595)} {ecart} pts vs moyenne</span>
+          )}
+        </div>
       </div>
 
       <section className="grid grid-cols-3 gap-2 text-center">
         <div className="rounded-2xl border border-ligne bg-ardoise p-3">
-          <p className="font-mono text-2xl font-bold text-sang-vif">{rang?.total_points ?? 0}</p>
+          <p className="font-mono text-2xl font-bold text-sang-vif">{mesPoints}</p>
           <p className="text-xs text-chalk/60">points</p>
           <p className="font-mono text-xs text-chalk/30">moy. {moyenneEquipe}</p>
         </div>
@@ -205,7 +223,7 @@ export default async function Profil({ params }: { params: { id: string } }) {
       {matchesUpcoming.length > 0 && (
         <section className="rounded-2xl border border-ligne bg-ardoise p-4">
           <h2 className="font-display text-sm mb-3">
-            A VENIR — {matchesUpcoming.filter((m: any) => predByMatch.has(m.id)).length}/{matchesUpcoming.length} paris faits
+            A VENIR {String.fromCharCode(8212)} {matchesUpcoming.filter((m: any) => predByMatch.has(m.id)).length}/{matchesUpcoming.length} paris faits
           </h2>
           <div className="space-y-2">
             {matchesUpcoming.map((m: any) => <MatchLine key={m.id} match={m} />)}
