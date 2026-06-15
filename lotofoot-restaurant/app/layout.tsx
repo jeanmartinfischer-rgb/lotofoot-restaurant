@@ -62,6 +62,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7l4 3 5-6 5 6 4-3-2 12H5Z" /><path d="M5 20h14" /></svg>
                 Vainqueur
               </Link>
+              <Link href="/mon-profil" className={LINK}>
+                <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>
+                Mon profil
+              </Link>
               <Link href="/admin" className={LINK}>
                 <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" /></svg>
                 Admin
