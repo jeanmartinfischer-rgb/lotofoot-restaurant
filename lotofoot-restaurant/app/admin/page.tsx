@@ -46,6 +46,15 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
     revalidatePath('/admin');
   }
 
+  async function toggleGuest(formData: FormData) {
+    'use server';
+    const admin = createAdmin();
+    const id = formData.get('id') as string;
+    const current = formData.get('guest') === 'true';
+    await admin.from('profiles').update({ is_guest: !current }).eq('id', id);
+    revalidatePath('/admin');
+  }
+
   async function syncNow() {
     'use server';
     const admin = createAdmin();
@@ -181,7 +190,7 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
         </button>
       </form>
 
-      <a
+      
         href="/admin/pronos"
         className="block w-full rounded-xl bg-ardoise border border-ligne py-3 font-display text-sm text-center text-chalk"
       >
@@ -193,12 +202,13 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
         <ul className="space-y-2">
           {users?.map((u: any) => (
             <li key={u.id} className="rounded-2xl border border-ligne bg-ardoise p-3 text-sm space-y-1">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <div>
                   <p className="font-semibold">
                     {u.pseudo}
                     {u.is_admin && ' ADMIN'}
                     {u.is_suspended && <span className="text-sang-vif"> (suspendu)</span>}
+                    {u.is_guest && <span className="text-chalk/50"> (invité)</span>}
                   </p>
                   <p className="font-mono text-xs text-chalk/50">
                     {emailMap.get(u.id) ?? 'Email non disponible'}
@@ -209,13 +219,22 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
                     })}
                   </p>
                 </div>
-                <form action={toggleSuspend}>
-                  <input type="hidden" name="id" value={u.id} />
-                  <input type="hidden" name="suspended" value={String(u.is_suspended)} />
-                  <button className="rounded-lg bg-ardoise border border-ligne px-3 py-1 text-xs font-semibold text-chalk">
-                    {u.is_suspended ? 'Reactiver' : 'Suspendre'}
-                  </button>
-                </form>
+                <div className="flex flex-col gap-1 shrink-0">
+                  <form action={toggleGuest}>
+                    <input type="hidden" name="id" value={u.id} />
+                    <input type="hidden" name="guest" value={String(u.is_guest)} />
+                    <button className="w-full rounded-lg bg-ardoise border border-ligne px-3 py-1 text-xs font-semibold text-chalk">
+                      {u.is_guest ? 'Mettre membre' : 'Mettre invité'}
+                    </button>
+                  </form>
+                  <form action={toggleSuspend}>
+                    <input type="hidden" name="id" value={u.id} />
+                    <input type="hidden" name="suspended" value={String(u.is_suspended)} />
+                    <button className="w-full rounded-lg bg-ardoise border border-ligne px-3 py-1 text-xs font-semibold text-chalk">
+                      {u.is_suspended ? 'Reactiver' : 'Suspendre'}
+                    </button>
+                  </form>
+                </div>
               </div>
             </li>
           ))}
