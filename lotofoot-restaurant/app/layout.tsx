@@ -42,25 +42,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4Z" /><path d="m9 10 2 2 4-4" /></svg>
                 Mes paris
               </Link>
-              <Link href="/classement" className={LINK}>
-                <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4h12v4a6 6 0 0 1-12 0Z" /><path d="M6 5H3v2a3 3 0 0 0 3 3" /><path d="M18 5h3v2a3 3 0 0 1-3 3" /><path d="M10 14h4l-.5 4h-3Z" /><path d="M8 20h8" /></svg>
-                Classement
-              </Link>
-              <Link href="/stats" className={LINK}>
-                <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20V10" /><path d="M10 20V4" /><path d="M16 20v-8" /><path d="M22 20H2" /></svg>
-                Mes stats
-              </Link>
               <Link href="/defi" className={LINK}>
                 <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3c1.5 3-1.5 5 0 8 1-1 2-3 1.5-5C16 8 18 11 18 14a6 6 0 0 1-12 0c0-2 1-4 3-6 .5 2 0 3 3 1-.5-3 0-5 0-6Z" /></svg>
                 Défi
+              </Link>
+              <Link href="/tournoi" className={LINK}>
+                <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7l4 3 5-6 5 6 4-3-2 12H5Z" /><path d="M5 20h14" /></svg>
+                Vainqueur
+              </Link>
+              <Link href="/classement" className={LINK}>
+                <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4h12v4a6 6 0 0 1-12 0Z" /><path d="M6 5H3v2a3 3 0 0 0 3 3" /><path d="M18 5h3v2a3 3 0 0 1-3 3" /><path d="M10 14h4l-.5 4h-3Z" /><path d="M8 20h8" /></svg>
+                Classement
               </Link>
               <Link href="/ligues" className={LINK}>
                 <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3" /><path d="M3 20a6 6 0 0 1 12 0" /><path d="M16 6a3 3 0 0 1 0 6" /><path d="M18 14a6 6 0 0 1 3 6" /></svg>
                 Ligues
               </Link>
-              <Link href="/tournoi" className={LINK}>
-                <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7l4 3 5-6 5 6 4-3-2 12H5Z" /><path d="M5 20h14" /></svg>
-                Vainqueur
+              <Link href="/stats" className={LINK}>
+                <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20V10" /><path d="M10 20V4" /><path d="M16 20v-8" /><path d="M22 20H2" /></svg>
+                Mes stats
               </Link>
               <Link href="/mon-profil" className={LINK}>
                 <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>
