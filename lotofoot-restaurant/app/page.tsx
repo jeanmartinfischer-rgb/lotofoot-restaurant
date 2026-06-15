@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
 import MatchCard from '@/components/MatchCard';
 import Crown from '@/components/Crown';
+import Avatar from '@/components/Avatar';
 
 export const dynamic = 'force-dynamic';
 
@@ -80,6 +81,7 @@ export default async function Home() {
                 <span className="w-7 text-center font-mono font-bold">
                   {r.rang === 1 ? String.fromCodePoint(0x1F947) : r.rang === 2 ? String.fromCodePoint(0x1F948) : String.fromCodePoint(0x1F949)}
                 </span>
+                <Avatar avatarUrl={r.avatar_url} pseudo={r.pseudo} size={36} />
                 <span className="flex-1 min-w-0 truncate font-semibold flex items-center gap-1.5">
                   {r.rang === 1 && <Crown size={18} />}
                   <span className="truncate">{r.pseudo}</span>
