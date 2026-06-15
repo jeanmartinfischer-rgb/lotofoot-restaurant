@@ -18,6 +18,12 @@ export default async function Home() {
 
   const now = new Date().toISOString();
   const in48h = new Date(Date.now() + 48 * 3600000).toISOString();
+
+  const { data: liveMatches } = await supabase
+    .from('matches').select('*')
+    .in('status', ['live', 'halftime'])
+    .order('kickoff');
+
   const { data: prochains } = await supabase
     .from('matches').select('*')
     .gte('kickoff', now)
@@ -39,21 +45,53 @@ export default async function Home() {
       </section>
 
       <section className="grid grid-cols-3 gap-3 text-center">
-        <div className="rounded-2xl border border-ligne bg-ardoise p-3">
+        <div className="glass rounded-2xl p-3">
           <p className="font-mono text-2xl font-bold text-sang-vif">{me?.total_points ?? 0}</p>
           <p className="text-xs text-chalk/60">points</p>
         </div>
-        <div className="rounded-2xl border border-ligne bg-ardoise p-3">
-          <p className="font-mono text-2xl font-bold">{me?.rang ? `#${me.rang}` : '-'}</p>
+        <div className="glass rounded-2xl p-3">
+          <p className="font-mono text-2xl font-bold">{me?.rang ? '#' + me.rang : '-'}</p>
           <p className="text-xs text-chalk/60">rang</p>
         </div>
-        <div className="rounded-2xl border border-ligne bg-ardoise p-3">
+        <div className="glass rounded-2xl p-3">
           <p className="font-mono text-2xl font-bold">{me?.exact_scores ?? 0}</p>
           <p className="text-xs text-chalk/60">exacts</p>
         </div>
       </section>
 
-      <section className="rounded-2xl border border-sang bg-sang/10 p-4">
+      {liveMatches && liveMatches.length > 0 && (
+        <section>
+          <h2 className="font-display text-sm mb-3 flex items-center gap-2">
+            <span className="inline-block w-2 h-2 rounded-full bg-sang-vif animate-pulse"></span>
+            EN DIRECT
+          </h2>
+          <div className="space-y-3">
+            {liveMatches.map((m: any) => (
+              <div key={m.id} className="glass-gold rounded-2xl p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex-1 truncate font-semibold text-sm">{m.home_team}</span>
+                  <div className="text-center">
+                    <p className="font-mono text-2xl font-bold text-sang-vif">
+                      {m.home_score ?? 0} - {m.away_score ?? 0}
+                    </p>
+                    <span className="font-mono text-xs font-bold text-sang-vif animate-pulse">
+                      {m.status === 'halftime' ? 'MI-TEMPS' : 'LIVE'}
+                    </span>
+                  </div>
+                  <span className="flex-1 truncate text-right font-semibold text-sm">{m.away_team}</span>
+                </div>
+                {predByMatch.get(m.id) && (
+                  <p className="mt-2 text-center font-mono text-xs text-chalk/50">
+                    Mon prono : {(predByMatch.get(m.id) as any).pred_home}-{(predByMatch.get(m.id) as any).pred_away}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="glass-gold rounded-2xl p-4">
         <h2 className="mb-1 font-display text-sm">BAREME LOTO FOOT</h2>
         <ul className="space-y-1 font-mono text-sm">
           <li>Score exact <b className="float-right">3 pts</b></li>
@@ -64,11 +102,11 @@ export default async function Home() {
 
       <section>
         <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="font-display text-sm">PROCHAINS MATCHS — PARIEZ !</h2>
+          <h2 className="font-display text-sm">PROCHAINS MATCHS</h2>
           <Link href="/matchs" className="text-xs font-semibold text-sang-vif">Tout voir</Link>
         </div>
         {!prochains?.length && (
-          <p className="rounded-2xl border border-ligne bg-ardoise p-4 text-sm text-chalk/60">
+          <p className="glass rounded-2xl p-4 text-sm text-chalk/60 text-center">
             Aucun match dans les prochaines 48 heures.
           </p>
         )}
