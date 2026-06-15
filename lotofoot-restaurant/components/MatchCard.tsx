@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase-client';
 import { isLocked, msUntilLock, outcomeFromScore, type Outcome } from '@/lib/scoring';
+import MatchReactions from './MatchReactions';
 
 export interface MatchRow {
   id: number;
@@ -42,10 +43,7 @@ function Countdown({ kickoff }: { kickoff: Date }) {
     : String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
   return (
     <span className="font-mono text-xs text-chalk/60">
-      Dans{' '}
-      <span className={ms < 600000 ? 'font-bold text-sang-vif' : 'font-bold text-chalk'}>
-        {txt}
-      </span>
+      Dans <span className={ms < 600000 ? 'font-bold text-sang-vif' : 'font-bold text-chalk'}>{txt}</span>
     </span>
   );
 }
@@ -75,17 +73,13 @@ export default function MatchCard({ match, prediction, userId }: {
         { onConflict: 'user_id,match_id' }
       );
     if (error) setError('Enregistrement impossible. Reessayez.');
-    else {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 1500);
-    }
+    else { setSaved(true); setTimeout(() => setSaved(false), 1500); }
   }
 
   function pickOutcome(o: Outcome) {
     const presets: Record<Outcome, [number, number]> = { '1': [2, 1], 'N': [1, 1], '2': [1, 2] };
     const [h, a] = presets[o];
-    setHome(h);
-    setAway(a);
+    setHome(h); setAway(a);
     save(h, a);
   }
 
@@ -107,9 +101,7 @@ export default function MatchCard({ match, prediction, userId }: {
   return (
     <article className="glass-gold rounded-2xl p-4">
       <div className="mb-3 flex items-center justify-between">
-        <time className="font-mono text-xs text-chalk/60">
-          {dateLabel} - {timeLabel}
-        </time>
+        <time className="font-mono text-xs text-chalk/60">{dateLabel} - {timeLabel}</time>
         {isLive && (
           <span className="rounded-full bg-sang-vif px-2 py-0.5 font-mono text-xs font-bold animate-pulse">
             LIVE
@@ -126,9 +118,7 @@ export default function MatchCard({ match, prediction, userId }: {
       <div className="mb-4 flex items-center justify-between gap-2">
         <span className="flex-1 truncate font-semibold">{match.home_team}</span>
         <span className="font-mono text-xl font-bold">
-          {match.home_score !== null
-            ? match.home_score + ' - ' + match.away_score
-            : 'vs'}
+          {match.home_score !== null ? match.home_score + ' - ' + match.away_score : 'vs'}
         </span>
         <span className="flex-1 truncate text-right font-semibold">{match.away_team}</span>
       </div>
@@ -154,7 +144,6 @@ export default function MatchCard({ match, prediction, userId }: {
           onChange={(e) => setHome(e.target.value === '' ? '' : Number(e.target.value))}
           onBlur={onScoreBlur}
           className="w-12 rounded-lg border border-ligne bg-pitch px-2 py-1 text-center font-mono font-bold disabled:opacity-40"
-          aria-label="Buts equipe domicile"
         />
         <span className="text-chalk/40">-</span>
         <input
@@ -163,18 +152,11 @@ export default function MatchCard({ match, prediction, userId }: {
           onChange={(e) => setAway(e.target.value === '' ? '' : Number(e.target.value))}
           onBlur={onScoreBlur}
           className="w-12 rounded-lg border border-ligne bg-pitch px-2 py-1 text-center font-mono font-bold disabled:opacity-40"
-          aria-label="Buts equipe exterieure"
         />
       </div>
 
-      {saved && (
-        <p className="mt-2 text-center font-mono text-xs font-bold text-green-400">
-          Pronostic enregistre
-        </p>
-      )}
-      {error && (
-        <p className="mt-2 text-center font-mono text-xs text-sang-vif">{error}</p>
-      )}
+      {saved && <p className="mt-2 text-center font-mono text-xs font-bold text-green-400">Pronostic enregistre</p>}
+      {error && <p className="mt-2 text-center font-mono text-xs text-sang-vif">{error}</p>}
 
       {isOver && (
         <a
@@ -187,17 +169,13 @@ export default function MatchCard({ match, prediction, userId }: {
 
       {prediction?.points !== null && prediction?.points !== undefined && isOver && (
         <p className="mt-2 rounded-xl border border-ligne bg-pitch p-2 text-center font-mono text-sm">
-          {prediction.is_exact_score && (
-            <>Score exact ! <b className="text-sang-vif">+3 pts</b></>
-          )}
-          {!prediction.is_exact_score && prediction.is_correct_result && (
-            <>Bon resultat <b>+1 pt</b></>
-          )}
-          {!prediction.is_correct_result && (
-            <>Rate <b className="text-chalk/50">0 pt</b></>
-          )}
+          {prediction.is_exact_score && <><b className="text-sang-vif">Score exact ! +3 pts</b></>}
+          {!prediction.is_exact_score && prediction.is_correct_result && <>Bon resultat <b>+1 pt</b></>}
+          {!prediction.is_correct_result && <>Rate <b className="text-chalk/50">0 pt</b></>}
         </p>
       )}
+
+      <MatchReactions matchId={match.id} userId={userId} />
     </article>
   );
 }
