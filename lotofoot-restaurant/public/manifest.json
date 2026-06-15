@@ -1,9 +1,24 @@
 {
-  "name": "LotoFoot Restaurant",
+  "name": "LotoFoot L'Arpege",
   "short_name": "LotoFoot",
+  "description": "Le concours de pronostics foot de L'Arpege",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0B0B0D",
   "theme_color": "#8E1B22",
-  "icons": [{ "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }]
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }
