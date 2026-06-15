@@ -70,7 +70,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </nav>
         </header>
-        <main className="mx-auto w-full max-w-lg md:max-w-6xl px-4 py-5">{children}</main>
+        <main className="page-enter mx-auto w-full max-w-lg md:max-w-6xl px-4 py-5">{children}</main>
       </body>
     </html>
   );
