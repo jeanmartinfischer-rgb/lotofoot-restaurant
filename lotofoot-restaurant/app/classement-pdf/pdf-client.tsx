@@ -41,6 +41,8 @@ export default function PdfClient({
         scale: 2,
         useCORS: true,
         logging: false,
+        width: 900,
+        height: 636,
       });
 
       const link = document.createElement('a');
@@ -93,77 +95,94 @@ export default function PdfClient({
         Le classement est telecharge en image, que tu peux partager ou imprimer depuis n'importe quel appareil.
       </p>
 
-      <div style={{ overflowX: 'auto' }}>
+      <div style={{ width: '100%', aspectRatio: '900 / 636', position: 'relative', overflow: 'hidden', borderRadius: '12px' }}>
         <div
-          ref={diplomeRef}
           style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
             width: '900px',
             height: '636px',
-            position: 'relative',
-            backgroundImage: "url('/bg.png')",
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundColor: '#0B0B0D',
-            overflow: 'hidden',
-            borderRadius: '12px',
+            transform: 'scale(var(--diplome-scale))',
+            transformOrigin: 'top left',
+          }}
+          ref={(el) => {
+            if (el && el.parentElement) {
+              const w = el.parentElement.clientWidth;
+              el.style.setProperty('--diplome-scale', String(w / 900));
+            }
           }}
         >
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'linear-gradient(180deg, rgba(11,11,13,0.4) 0%, rgba(11,11,13,0.68) 60%, rgba(11,11,13,0.8) 100%)',
-          }} />
-          <div style={{
-            position: 'absolute', inset: '24px',
-            border: '2px solid #D4AF37', borderRadius: '4px',
-          }} />
+          <div
+            ref={diplomeRef}
+            style={{
+              width: '900px',
+              height: '636px',
+              position: 'relative',
+              backgroundImage: "url('/bg.png')",
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundColor: '#0B0B0D',
+              overflow: 'hidden',
+            }}
+          >
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(180deg, rgba(11,11,13,0.4) 0%, rgba(11,11,13,0.68) 60%, rgba(11,11,13,0.8) 100%)',
+            }} />
+            <div style={{
+              position: 'absolute', inset: '24px',
+              border: '2px solid #D4AF37', borderRadius: '4px',
+            }} />
 
-          <div style={{ position: 'relative', padding: '34px 60px', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
-            <div style={{ textAlign: 'center' }}>
-              <p style={{ fontFamily: 'serif', fontSize: '12px', letterSpacing: '4px', color: '#D4AF37', margin: 0 }}>
-                L'ARPEGE — FIFA WORLD CUP 2026
-              </p>
-              <p className="font-display" style={{ fontSize: '44px', color: '#fff', margin: '6px 0 0', letterSpacing: '1px', lineHeight: 1 }}>
-                LOTO<span style={{ color: '#C2272F' }}>FOOT</span>
-              </p>
-              <div style={{ width: '70px', height: '2px', background: '#D4AF37', margin: '10px auto' }} />
-              <p style={{ fontFamily: 'serif', fontSize: '22px', color: '#fff', letterSpacing: '5px', margin: 0 }}>
-                CLASSEMENT FINAL
-              </p>
-            </div>
-
-            {ordrePodium.length > 0 && (
-              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '20px', marginTop: '18px' }}>
-                {ordrePodium.map((p) => {
-                  const isFirst = p.rang === 1;
-                  const hauteur = isFirst ? '56px' : p.rang === 2 ? '42px' : '32px';
-                  const medal = p.rang === 1 ? '🥇' : p.rang === 2 ? '🥈' : '🥉';
-                  return (
-                    <div key={p.user_id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '150px' }}>
-                      <span style={{ fontSize: '28px' }}>{medal}</span>
-                      <span style={{ fontFamily: 'monospace', fontSize: '16px', color: '#fff', textAlign: 'center' }}>{p.pseudo}</span>
-                      <span style={{ fontFamily: 'monospace', fontSize: '13px', color: '#D4AF37', marginBottom: '5px' }}>{p.total_points} pts</span>
-                      <div style={{
-                        width: '100%', height: hauteur,
-                        borderTop: isFirst ? '2px solid #D4AF37' : '1px solid #2a2a30',
-                        borderLeft: isFirst ? '1px solid #D4AF37' : '1px solid #2a2a30',
-                        borderRight: isFirst ? '1px solid #D4AF37' : '1px solid #2a2a30',
-                        borderTopLeftRadius: '8px', borderTopRightRadius: '8px',
-                        background: isFirst ? 'rgba(212,175,55,0.18)' : 'rgba(40,40,48,0.5)',
-                      }} />
-                    </div>
-                  );
-                })}
+            <div style={{ position: 'relative', padding: '34px 60px', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ fontFamily: 'serif', fontSize: '12px', letterSpacing: '4px', color: '#D4AF37', margin: 0 }}>
+                  L'ARPEGE — FIFA WORLD CUP 2026
+                </p>
+                <p className="font-display" style={{ fontSize: '44px', color: '#fff', margin: '6px 0 0', letterSpacing: '1px', lineHeight: 1 }}>
+                  LOTO<span style={{ color: '#C2272F' }}>FOOT</span>
+                </p>
+                <div style={{ width: '70px', height: '2px', background: '#D4AF37', margin: '10px auto' }} />
+                <p style={{ fontFamily: 'serif', fontSize: '22px', color: '#fff', letterSpacing: '5px', margin: 0 }}>
+                  CLASSEMENT FINAL
+                </p>
               </div>
-            )}
 
-            <div style={{ display: 'flex', gap: '40px', marginTop: '18px', flex: 1 }}>
-              <div style={{ flex: 1 }}>{colG.map(ligne)}</div>
-              <div style={{ flex: 1 }}>{colD.map(ligne)}</div>
+              {ordrePodium.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '20px', marginTop: '18px' }}>
+                  {ordrePodium.map((p) => {
+                    const isFirst = p.rang === 1;
+                    const hauteur = isFirst ? '56px' : p.rang === 2 ? '42px' : '32px';
+                    const medal = p.rang === 1 ? '🥇' : p.rang === 2 ? '🥈' : '🥉';
+                    return (
+                      <div key={p.user_id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '150px' }}>
+                        <span style={{ fontSize: '28px' }}>{medal}</span>
+                        <span style={{ fontFamily: 'monospace', fontSize: '16px', color: '#fff', textAlign: 'center' }}>{p.pseudo}</span>
+                        <span style={{ fontFamily: 'monospace', fontSize: '13px', color: '#D4AF37', marginBottom: '5px' }}>{p.total_points} pts</span>
+                        <div style={{
+                          width: '100%', height: hauteur,
+                          borderTop: isFirst ? '2px solid #D4AF37' : '1px solid #2a2a30',
+                          borderLeft: isFirst ? '1px solid #D4AF37' : '1px solid #2a2a30',
+                          borderRight: isFirst ? '1px solid #D4AF37' : '1px solid #2a2a30',
+                          borderTopLeftRadius: '8px', borderTopRightRadius: '8px',
+                          background: isFirst ? 'rgba(212,175,55,0.18)' : 'rgba(40,40,48,0.5)',
+                        }} />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '40px', marginTop: '18px', flex: 1 }}>
+                <div style={{ flex: 1 }}>{colG.map(ligne)}</div>
+                <div style={{ flex: 1 }}>{colD.map(ligne)}</div>
+              </div>
+
+              <p style={{ textAlign: 'center', fontFamily: 'monospace', fontSize: '11px', color: 'rgba(255,255,255,0.4)', margin: 0 }}>
+                Genere le {new Date().toLocaleDateString('fr-FR')} — lotofoot-restaurant
+              </p>
             </div>
-
-            <p style={{ textAlign: 'center', fontFamily: 'monospace', fontSize: '11px', color: 'rgba(255,255,255,0.4)', margin: 0 }}>
-              Genere le {new Date().toLocaleDateString('fr-FR')} — lotofoot-restaurant
-            </p>
           </div>
         </div>
       </div>
