@@ -48,17 +48,11 @@ export default function SamePredictions({
   return (
     <div className="mt-2 rounded-xl border border-ligne bg-pitch p-3">
       <p className="font-mono text-xs text-chalk/50 mb-2">
-        {others.length === 1
-          ? '1 autre joueur a le meme prono'
-          : others.length + ' autres ont le meme prono'}
+        {others.length === 1 ? '1 autre joueur a le meme prono' : others.length + ' autres ont le meme prono'}
       </p>
       <div className="flex flex-wrap gap-2">
         {others.map((o) => (
-          
-            key={o.id}
-            href={'/profil/' + o.id}
-            className="flex items-center gap-1.5 rounded-full border border-ligne bg-ardoise pl-1 pr-3 py-1 hover:border-sang-vif transition-colors"
-          >
+          <a key={o.id} href={'/profil/' + o.id} className="flex items-center gap-1.5 rounded-full border border-ligne bg-ardoise pl-1 pr-3 py-1 hover:border-sang-vif transition-colors">
             <Avatar avatarUrl={o.avatar_url} pseudo={o.pseudo} size={22} />
             <span className="font-mono text-xs text-chalk/80">{o.pseudo}</span>
           </a>
