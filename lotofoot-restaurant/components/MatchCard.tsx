@@ -159,15 +159,31 @@ export default function MatchCard({ match, prediction, userId }: {
       {error && <p className="mt-2 text-center font-mono text-xs text-sang-vif">{error}</p>}
 
       {isOver && (
-        <a href={'/matchs/' + match.id} className="mt-3 block w-full rounded-xl border border-ligne py-2 text-center font-mono text-xs text-chalk/60 hover:text-chalk hover:border-chalk/40">Voir le resume du match</a>
+        <div className="rounded-xl border border-ligne bg-pitch p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-xs text-chalk/50">Score final</span>
+            <span className="font-mono text-lg font-bold text-chalk">{match.home_score} - {match.away_score}</span>
+          </div>
+          {aParie ? (
+            <>
+              <div className="flex items-center justify-between border-t border-ligne pt-2">
+                <span className="font-mono text-xs text-chalk/50">Ton prono</span>
+                <span className="font-mono text-sm font-bold text-chalk/80">{prediction!.pred_home} - {prediction!.pred_away}</span>
+              </div>
+              <div className="flex items-center justify-center pt-1">
+                {prediction!.is_exact_score && <span className="rounded-full bg-sang-vif px-3 py-1 font-mono text-xs font-bold text-chalk">Score exact ! +3 pts</span>}
+                {!prediction!.is_exact_score && prediction!.is_correct_result && <span className="rounded-full border border-green-500 bg-green-500/15 px-3 py-1 font-mono text-xs font-bold text-green-300">Bon resultat +1 pt</span>}
+                {!prediction!.is_correct_result && <span className="rounded-full border border-ligne px-3 py-1 font-mono text-xs text-chalk/50">Rate 0 pt</span>}
+              </div>
+            </>
+          ) : (
+            <p className="border-t border-ligne pt-2 text-center font-mono text-xs text-chalk/40">Tu n'avais pas parie sur ce match</p>
+          )}
+        </div>
       )}
 
-      {prediction?.points !== null && prediction?.points !== undefined && isOver && (
-        <p className="mt-2 rounded-xl border border-ligne bg-pitch p-2 text-center font-mono text-sm">
-          {prediction.is_exact_score && <><b className="text-sang-vif">Score exact ! +3 pts</b></>}
-          {!prediction.is_exact_score && prediction.is_correct_result && <>Bon resultat <b>+1 pt</b></>}
-          {!prediction.is_correct_result && <>Rate <b className="text-chalk/50">0 pt</b></>}
-        </p>
+      {isOver && (
+        <a href={'/matchs/' + match.id} className="mt-3 block w-full rounded-xl border border-ligne py-2 text-center font-mono text-xs text-chalk/60 hover:text-chalk hover:border-chalk/40">Voir le resume du match</a>
       )}
 
       {(isLive || isOver) && aParie && (
