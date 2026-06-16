@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import LogoutButton from '@/components/LogoutButton';
 import Splash from '@/components/Splash';
+import AutoRefresh from './auto-refresh';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr">
       <body className="min-h-dvh">
         <Splash />
+        <AutoRefresh />
         <script dangerouslySetInnerHTML={{
           __html: "if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js')"
         }} />
@@ -57,7 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 Classement
               </Link>
               <Link href="/ligues" className={LINK}>
-                <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3" /><path d="M3 20a6 6 0 0 1 12 0" /><path d="M16 6a3 3 0 0 1 0 6" /><path d="M18 14a6 6 0 0 1 3 6" /></svg>
+                <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3" /><path d="M3 20a6 6 0 0 1 12 0" /><path d="M16 6a3 3 0 0 1 0 6" /><path d="M18 14a6 6 0 0 1 3 6" /></svg>
                 Ligues
               </Link>
               <Link href="/stats" className={LINK}>
