@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 export default function AutoRefresh() {
   const router = useRouter();
   useEffect(() => {
-    const t = setInterval(() => router.refresh(), 30000);
+    const t = setInterval(() => router.refresh(), 15000);
     const onShow = () => router.refresh();
     document.addEventListener("visibilitychange", onShow);
     window.addEventListener("focus", onShow);
