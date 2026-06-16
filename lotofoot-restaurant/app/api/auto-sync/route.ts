@@ -142,23 +142,26 @@ export async function GET(req: NextRequest) {
   }
 
   // ============================================================
-  // ETAPE 3 : Calculer les points pour tous les matchs termines
+  // ETAPE 3 : Recalculer les points de TOUS les matchs termines
+  //           (a chaque passage, pour coller au score final meme
+  //            si le score a ete corrige apres coup)
   // ============================================================
   try {
     const { data: predsToUpdate } = await admin
       .from('predictions')
-      .select('id, user_id, match_id, pred_home, pred_away, matches!inner(home_score, away_score, status)')
-      .eq('matches.status', 'finished')
-      .is('points', null);
+      .select('id, pred_home, pred_away, points, is_exact_score, is_correct_result, matches!inner(home_score, away_score, status)')
+      .eq('matches.status', 'finished');
 
     for (const p of predsToUpdate ?? []) {
       const m = (p as any).matches;
-      if (m.home_score === null) continue;
+      if (m.home_score === null || m.away_score === null) continue;
       const isExact = p.pred_home === m.home_score && p.pred_away === m.away_score;
       const predSign = Math.sign(p.pred_home - p.pred_away);
       const realSign = Math.sign(m.home_score - m.away_score);
       const isCorrect = predSign === realSign;
       const points = isExact ? 3 : isCorrect ? 1 : 0;
+
+      if (p.points === points && p.is_exact_score === isExact && p.is_correct_result === isCorrect) continue;
 
       await admin.from('predictions').update({
         points,
