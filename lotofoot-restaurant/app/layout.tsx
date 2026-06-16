@@ -59,4 +59,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 Classement
               </Link>
               <Link href="/ligues" className={LINK}>
-                <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
+                <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3" /><path d="M3 20a6 6 0 0 1 12 0" /><path d="M16 6a3 3 0 0 1 0 6" /><path d="M18 14a6 6 0 0 1 3 6" /></svg>
+                Ligues
+              </Link>
+              <Link href="/stats" className={LINK}>
+                <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20V10" /><path d="M10 20V4" /><path d="M16 20v-8" /><path d="M22 20H2" /></svg>
+                Mes stats
+              </Link>
+              <Link href="/mon-profil" className={LINK}>
+                <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>
+                Mon profil
+              </Link>
+              <Link href="/admin" className={LINK}>
+                <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" /></svg>
+                Admin
+              </Link>
+              <LogoutButton />
+            </div>
+          </nav>
+        </header>
+        <main className="page-enter mx-auto w-full max-w-lg md:max-w-6xl px-4 py-5">{children}</main>
+      </body>
+    </html>
+  );
+}
