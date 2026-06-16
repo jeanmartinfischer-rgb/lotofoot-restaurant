@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase-client';
 import { isLocked, msUntilLock, outcomeFromScore, type Outcome } from '@/lib/scoring';
 import MatchReactions from './MatchReactions';
 import Confetti from './Confetti';
+import SamePredictions from './SamePredictions';
 
 export interface MatchRow {
   id: number;
@@ -167,6 +168,10 @@ export default function MatchCard({ match, prediction, userId }: {
           {!prediction.is_exact_score && prediction.is_correct_result && <>Bon resultat <b>+1 pt</b></>}
           {!prediction.is_correct_result && <>Rate <b className="text-chalk/50">0 pt</b></>}
         </p>
+      )}
+
+      {(isLive || isOver) && aParie && (
+        <SamePredictions matchId={match.id} userId={userId} predHome={prediction!.pred_home} predAway={prediction!.pred_away} />
       )}
 
       <MatchReactions matchId={match.id} userId={userId} />
