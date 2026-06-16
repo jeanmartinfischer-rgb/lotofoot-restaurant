@@ -31,12 +31,15 @@ export default function SamePredictions({
 
       if (!alive) return;
       const list = (data ?? [])
-        .filter((r: any) => r.user_id !== userId && r.profiles)
-        .map((r: any) => ({
-          id: r.user_id,
-          pseudo: r.profiles.pseudo,
-          avatar_url: r.profiles.avatar_url,
-        }));
+        .filter((r: any) => r.user_id !== userId)
+        .map((r: any) => {
+          const prof = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+          return {
+            id: r.user_id,
+            pseudo: prof?.pseudo ?? '?',
+            avatar_url: prof?.avatar_url ?? null,
+          };
+        });
       setOthers(list);
       setLoaded(true);
     })();
