@@ -48,6 +48,59 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Cle API manquante' }, { status: 500 });
   }
 
+  // ============================================================
+  // ETAPE 0 : Y a-t-il une raison de travailler maintenant ?
+  //   On appelle l'API foot UNIQUEMENT s'il y a :
+  //   - un match en cours (live / halftime), OU
+  //   - un match qui commence dans moins de 15 min, OU
+  //   - un match termine dans les 3 dernieres heures
+  //     (pour importer events + calculer les points apres coup).
+  //   Sinon : on s'arrete tout de suite, sans toucher l'API.
+  //   Le parametre ?force=1 permet de forcer un passage complet.
+  // ============================================================
+  const force = req.nextUrl.searchParams.get('force') === '1';
+  if (!force) {
+    const now = Date.now();
+    const soon = new Date(now + 15 * 60 * 1000).toISOString();
+    const nowIso = new Date(now).toISOString();
+    const threeHoursAgo = new Date(now - 3 * 60 * 60 * 1000).toISOString();
+
+    const { data: liveMatches } = await admin
+      .from('matches')
+      .select('id')
+      .in('status', ['live', 'halftime'])
+      .limit(1);
+
+    const { data: startingSoon } = await admin
+      .from('matches')
+      .select('id')
+      .eq('status', 'scheduled')
+      .gte('kickoff', nowIso)
+      .lte('kickoff', soon)
+      .limit(1);
+
+    const { data: justFinished } = await admin
+      .from('matches')
+      .select('id')
+      .eq('status', 'finished')
+      .gte('kickoff', threeHoursAgo)
+      .limit(1);
+
+    const busy =
+      (liveMatches?.length ?? 0) > 0 ||
+      (startingSoon?.length ?? 0) > 0 ||
+      (justFinished?.length ?? 0) > 0;
+
+    if (!busy) {
+      return NextResponse.json({
+        ok: true,
+        skipped: true,
+        reason: 'Aucun match en cours ou imminent, rien a faire.',
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+
   const results = {
     matchs_importes: 0,
     matchs_termines: 0,
