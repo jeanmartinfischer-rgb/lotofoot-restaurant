@@ -12,17 +12,36 @@ export default function Reset() {
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
-  const [ready, setReady] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) setReady(true);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') setReady(true);
-    });
-    return () => { sub.subscription.unsubscribe(); };
+
+    async function prepare() {
+      try {
+        const url = new URL(window.location.href);
+        const code = url.searchParams.get('code');
+        if (code) {
+          await supabase.auth.exchangeCodeForSession(code);
+          setChecking(false);
+          return;
+        }
+        const hash = window.location.hash;
+        if (hash && hash.includes('access_token')) {
+          const params = new URLSearchParams(hash.substring(1));
+          const access_token = params.get('access_token');
+          const refresh_token = params.get('refresh_token');
+          if (access_token && refresh_token) {
+            await supabase.auth.setSession({ access_token, refresh_token });
+          }
+        }
+      } catch (e) {
+      } finally {
+        setChecking(false);
+      }
+    }
+
+    prepare();
   }, []);
 
   async function save() {
@@ -34,7 +53,10 @@ export default function Reset() {
     const supabase = createClient();
     const { error } = await supabase.auth.updateUser({ password });
     setLoading(false);
-    if (error) { setError(error.message); return; }
+    if (error) {
+      setError('Lien expire ou invalide. Redemande un email de reinitialisation depuis la page de connexion.');
+      return;
+    }
     setInfo('Mot de passe modifie ! Redirection...');
     setTimeout(() => { router.push('/'); router.refresh(); }, 1500);
   }
@@ -50,50 +72,44 @@ export default function Reset() {
         </h1>
       </div>
 
-      {!ready && (
-        <p className="text-center text-sm text-chalk/60">
-          Verification du lien... Si rien ne se passe, reclique sur le lien recu par email.
-        </p>
+      {checking && (
+        <p className="text-center text-sm text-chalk/60">Verification du lien...</p>
       )}
 
-      {ready && (
-        <>
-          <div className="relative">
-            <input
-              type={showPwd ? 'text' : 'password'}
-              placeholder="Nouveau mot de passe"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-ligne bg-ardoise px-4 py-3 pr-12"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPwd(!showPwd)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-chalk/50 hover:text-chalk text-lg"
-            >
-              {showPwd ? String.fromCodePoint(0x1F648) : String.fromCodePoint(0x1F441)}
-            </button>
-          </div>
-          <input
-            type={showPwd ? 'text' : 'password'}
-            placeholder="Confirme le mot de passe"
-            value={password2}
-            onChange={(e) => setPassword2(e.target.value)}
-            className="w-full rounded-xl border border-ligne bg-ardoise px-4 py-3"
-          />
+      <div className="relative">
+        <input
+          type={showPwd ? 'text' : 'password'}
+          placeholder="Nouveau mot de passe"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full rounded-xl border border-ligne bg-ardoise px-4 py-3 pr-12"
+        />
+        <button type="button" onClick={() => setShowPwd(!showPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-chalk/50 hover:text-chalk text-lg">
+          {showPwd ? String.fromCodePoint(0x1F648) : String.fromCodePoint(0x1F441)}
+        </button>
+      </div>
+      <input
+        type={showPwd ? 'text' : 'password'}
+        placeholder="Confirme le mot de passe"
+        value={password2}
+        onChange={(e) => setPassword2(e.target.value)}
+        className="w-full rounded-xl border border-ligne bg-ardoise px-4 py-3"
+      />
 
-          {error && <p className="text-center text-sm text-sang-vif">{error}</p>}
-          {info && <p className="text-center text-sm text-green-400">{info}</p>}
+      {error && <p className="text-center text-sm text-sang-vif">{error}</p>}
+      {info && <p className="text-center text-sm text-green-400">{info}</p>}
 
-          <button
-            onClick={save}
-            disabled={loading}
-            className="w-full rounded-xl bg-sang py-3 font-display text-sm disabled:opacity-50"
-          >
-            {loading ? '...' : 'ENREGISTRER'}
-          </button>
-        </>
-      )}
+      <button
+        onClick={save}
+        disabled={loading}
+        className="w-full rounded-xl bg-sang py-3 font-display text-sm disabled:opacity-50"
+      >
+        {loading ? '...' : 'ENREGISTRER'}
+      </button>
+
+      <a href="/login" className="block w-full text-center text-sm text-chalk/50 hover:text-chalk">
+        Retour a la connexion
+      </a>
     </div>
   );
 }
