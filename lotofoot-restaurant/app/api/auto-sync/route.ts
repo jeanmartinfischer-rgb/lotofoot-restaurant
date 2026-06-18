@@ -50,19 +50,24 @@ export async function GET(req: NextRequest) {
 
   // ============================================================
   // ETAPE 0 : Y a-t-il une raison de travailler maintenant ?
-  //   On appelle l'API foot UNIQUEMENT s'il y a :
-  //   - un match en cours (live / halftime), OU
-  //   - un match qui commence dans moins de 15 min, OU
-  //   - un match termine dans les 3 dernieres heures
-  //     (pour importer events + calculer les points apres coup).
+  //   On appelle l'API foot si :
+  //   - un match est marque en cours (live / halftime), OU
+  //   - un match commence dans moins de 30 min, OU
+  //   - un match dont l'heure de coup d'envoi est DEJA PASSEE
+  //     mais qui n'est pas encore termine (couvre le cas ou
+  //     l'API tarde a basculer le match en "live" : on continue
+  //     a interroger tant que le match n'est pas fini), OU
+  //   - un match termine dans les 3 dernieres heures.
   //   Sinon : on s'arrete tout de suite, sans toucher l'API.
-  //   Le parametre ?force=1 permet de forcer un passage complet.
+  //   Le parametre ?force=1 force un passage complet.
   // ============================================================
   const force = req.nextUrl.searchParams.get('force') === '1';
   if (!force) {
     const now = Date.now();
-    const soon = new Date(now + 15 * 60 * 1000).toISOString();
+    const soon = new Date(now + 30 * 60 * 1000).toISOString();
     const nowIso = new Date(now).toISOString();
+    // Un match "commence" au plus tard 3h avant maintenant est
+    // considere encore en cours s'il n'est pas marque termine.
     const threeHoursAgo = new Date(now - 3 * 60 * 60 * 1000).toISOString();
 
     const { data: liveMatches } = await admin
@@ -79,6 +84,18 @@ export async function GET(req: NextRequest) {
       .lte('kickoff', soon)
       .limit(1);
 
+    // Cas cle : heure de coup d'envoi passee (dans les 3 dernieres
+    // heures) mais match toujours pas termine -> on doit continuer
+    // a interroger l'API meme s'il est encore marque "scheduled".
+    const { data: inProgress } = await admin
+      .from('matches')
+      .select('id')
+      .neq('status', 'finished')
+      .neq('status', 'postponed')
+      .gte('kickoff', threeHoursAgo)
+      .lte('kickoff', nowIso)
+      .limit(1);
+
     const { data: justFinished } = await admin
       .from('matches')
       .select('id')
@@ -89,6 +106,7 @@ export async function GET(req: NextRequest) {
     const busy =
       (liveMatches?.length ?? 0) > 0 ||
       (startingSoon?.length ?? 0) > 0 ||
+      (inProgress?.length ?? 0) > 0 ||
       (justFinished?.length ?? 0) > 0;
 
     if (!busy) {
@@ -196,8 +214,6 @@ export async function GET(req: NextRequest) {
 
   // ============================================================
   // ETAPE 3 : Recalculer les points de TOUS les matchs termines
-  //           (a chaque passage, pour coller au score final meme
-  //            si le score a ete corrige apres coup)
   // ============================================================
   try {
     const { data: predsToUpdate } = await admin
