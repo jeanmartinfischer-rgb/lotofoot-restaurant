@@ -103,7 +103,7 @@ export default function DefiClient({
 
       <div className="flex items-baseline justify-between">
         <h1 className="font-display text-2xl">DEFI EXPRESS</h1>
-        <p className="font-mono text-xs text-chalk/50">{pseudo}</p>
+        <p className="font-graff text-lg tracking-wide">{pseudo}</p>
       </div>
 
       <section className="grid grid-cols-2 gap-3">
@@ -202,7 +202,7 @@ export default function DefiClient({
 
           {!locked && (
             <p className="mt-3 text-center font-mono text-xs text-chalk/40">
-              Verrouillage au coup d'envoi
+              Verrouillage 5 min avant le coup d'envoi
             </p>
           )}
         </section>
@@ -228,7 +228,7 @@ export default function DefiClient({
                       {rank === 1 ? String.fromCodePoint(0x1F947) : rank === 2 ? String.fromCodePoint(0x1F948) : rank === 3 ? String.fromCodePoint(0x1F949) : '#' + rank}
                     </span>
                     <Avatar avatarUrl={r.avatar_url} pseudo={r.pseudo} size={32} />
-                    <span className="truncate">{r.pseudo}</span>
+                    <span className="font-graff text-lg tracking-wide truncate">{r.pseudo}</span>
                   </span>
                   <span className="font-mono text-xs shrink-0">
                     {r.streak_current} <span className="text-chalk/30">/ {r.streak_best}</span>
