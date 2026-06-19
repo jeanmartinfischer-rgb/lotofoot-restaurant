@@ -52,9 +52,9 @@ export default async function Classement() {
                             src={BADGE_INFOS[t].img}
                             alt={BADGE_INFOS[t].label}
                             title={BADGE_INFOS[t].label + ' - ' + BADGE_INFOS[t].desc}
-                            width={100}
-                            height={100}
-                            style={{ width: 100, height: 100, objectFit: 'contain' }}
+                            width={130}
+                            height={130}
+                            style={{ width: 130, height: 130, objectFit: 'contain' }}
                             loading="lazy"
                           />
                         ))}
@@ -83,9 +83,9 @@ export default async function Classement() {
               <img
                 src={BADGE_INFOS[t].img}
                 alt={BADGE_INFOS[t].label}
-                width={90}
-                height={90}
-                style={{ width: 90, height: 90, objectFit: 'contain', flexShrink: 0 }}
+                width={110}
+                height={110}
+                style={{ width: 110, height: 110, objectFit: 'contain', flexShrink: 0 }}
                 loading="lazy"
               />
               <div className="min-w-0">
