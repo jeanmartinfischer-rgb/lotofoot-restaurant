@@ -11,6 +11,8 @@ export interface MatchRow {
   id: number;
   home_team: string;
   away_team: string;
+  home_logo: string | null;
+  away_logo: string | null;
   kickoff: string;
   status: string;
   home_score: number | null;
@@ -27,6 +29,20 @@ export interface PredictionRow {
 }
 
 const TZ = 'Europe/Paris';
+
+function Flag({ src }: { src: string | null }) {
+  if (!src) return null;
+  return (
+    <img
+      src={src}
+      alt=""
+      width={22}
+      height={22}
+      style={{ width: 22, height: 22, objectFit: 'contain', flexShrink: 0 }}
+      loading="lazy"
+    />
+  );
+}
 
 function Countdown({ kickoff }: { kickoff: Date }) {
   const [ms, setMs] = useState(() => msUntilLock(kickoff));
@@ -113,11 +129,17 @@ export default function MatchCard({ match, prediction, userId }: {
       </div>
 
       <div className="mb-4 flex items-center justify-between gap-2">
-        <span className="flex-1 truncate font-semibold">{match.home_team}</span>
+        <span className="flex flex-1 items-center gap-2 truncate font-semibold">
+          <Flag src={match.home_logo} />
+          <span className="truncate">{match.home_team}</span>
+        </span>
         <span className="font-mono text-xl font-bold">
           {match.home_score !== null ? match.home_score + ' - ' + match.away_score : 'vs'}
         </span>
-        <span className="flex-1 truncate text-right font-semibold">{match.away_team}</span>
+        <span className="flex flex-1 items-center justify-end gap-2 truncate text-right font-semibold">
+          <span className="truncate">{match.away_team}</span>
+          <Flag src={match.away_logo} />
+        </span>
       </div>
 
       {!locked && !open && (
