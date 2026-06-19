@@ -45,16 +45,16 @@ export default async function Classement() {
                       <span className="truncate">{r.pseudo}</span>
                     </p>
                     {mesBadges.length > 0 && (
-                      <div className="flex items-center gap-1.5 mt-1">
+                      <div className="flex items-center gap-2 mt-1">
                         {mesBadges.map((t) => (
                           <img
                             key={t}
                             src={BADGE_INFOS[t].img}
                             alt={BADGE_INFOS[t].label}
                             title={BADGE_INFOS[t].label + ' - ' + BADGE_INFOS[t].desc}
-                            width={34}
-                            height={34}
-                            style={{ width: 34, height: 34, objectFit: 'contain' }}
+                            width={100}
+                            height={100}
+                            style={{ width: 100, height: 100, objectFit: 'contain' }}
                             loading="lazy"
                           />
                         ))}
@@ -83,9 +83,9 @@ export default async function Classement() {
               <img
                 src={BADGE_INFOS[t].img}
                 alt={BADGE_INFOS[t].label}
-                width={56}
-                height={56}
-                style={{ width: 56, height: 56, objectFit: 'contain', flexShrink: 0 }}
+                width={90}
+                height={90}
+                style={{ width: 90, height: 90, objectFit: 'contain', flexShrink: 0 }}
                 loading="lazy"
               />
               <div className="min-w-0">
