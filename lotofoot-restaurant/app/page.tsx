@@ -41,14 +41,12 @@ export default async function Home() {
 
   return (
     <div className="space-y-6">
-      <section className="flex items-end justify-between">
-        <div>
-          <p className="font-mono text-xs uppercase tracking-widest text-chalk/50">Bonjour</p>
-          <h1 className="font-display text-3xl">{profile?.pseudo ?? 'Joueur'}</h1>
-        </div>
+      <section className="text-center space-y-1">
+        <p className="font-mono text-xs uppercase tracking-widest text-chalk/50">Bonjour</p>
+        <h1 className="font-graff text-6xl tracking-wide">{profile?.pseudo ?? 'Joueur'}</h1>
         {streak > 0 && (
-          <div className="rounded-2xl border border-sang bg-sang/10 px-3 py-2 text-center">
-            <p className="font-mono text-xl font-bold text-sang-vif">{String.fromCodePoint(0x1F525)} {streak}</p>
+          <div className="inline-block rounded-2xl border border-sang bg-sang/10 px-3 py-1.5 mt-2">
+            <p className="font-mono text-lg font-bold text-sang-vif">{String.fromCodePoint(0x1F525)} {streak}</p>
             <p className="text-[10px] text-chalk/60">serie en cours</p>
           </div>
         )}
@@ -82,9 +80,9 @@ export default async function Home() {
                   {r.rang === 1 ? String.fromCodePoint(0x1F947) : r.rang === 2 ? String.fromCodePoint(0x1F948) : String.fromCodePoint(0x1F949)}
                 </span>
                 <Avatar avatarUrl={r.avatar_url} pseudo={r.pseudo} size={36} />
-                <span className="flex-1 min-w-0 truncate font-semibold flex items-center gap-1.5">
+                <span className="flex-1 min-w-0 truncate flex items-center gap-1.5">
                   {r.rang === 1 && <Crown size={18} />}
-                  <span className="truncate">{r.pseudo}</span>
+                  <span className="font-graff text-lg tracking-wide truncate">{r.pseudo}</span>
                 </span>
                 <span className="font-mono text-sm font-bold text-sang-vif">{r.total_points}</span>
               </Link>
