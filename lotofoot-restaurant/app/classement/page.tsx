@@ -35,7 +35,7 @@ export default async function Classement() {
             <li key={r.user_id}>
               <PodiumRow rang={r.rang}>
                 <Link href={'/profil/' + r.user_id} className="flex items-center gap-3 p-3 w-full">
-                  <span className="w-8 text-center font-mono font-bold text-lg">
+                  <span className="w-8 text-center font-mono font-bold text-lg shrink-0">
                     {r.rang === 1 ? String.fromCodePoint(0x1F947) : r.rang === 2 ? String.fromCodePoint(0x1F948) : r.rang === 3 ? String.fromCodePoint(0x1F949) : '#' + r.rang}
                   </span>
                   <Avatar avatarUrl={r.avatar_url} pseudo={r.pseudo} size={40} />
@@ -45,25 +45,23 @@ export default async function Classement() {
                       <span className="truncate">{r.pseudo}</span>
                     </p>
                     {mesBadges.length > 0 && (
-                      <div className="flex items-center gap-2 mt-1">
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
                         {mesBadges.map((t) => (
                           <img
                             key={t}
                             src={BADGE_INFOS[t].img}
                             alt={BADGE_INFOS[t].label}
                             title={BADGE_INFOS[t].label + ' - ' + BADGE_INFOS[t].desc}
-                            width={130}
-                            height={130}
-                            style={{ width: 130, height: 130, objectFit: 'contain' }}
+                            className="w-12 h-12 md:w-28 md:h-28 object-contain shrink-0"
                             loading="lazy"
                           />
                         ))}
                       </div>
                     )}
                   </div>
-                  <span className="font-mono text-xs text-chalk/60">{r.exact_scores} exacts</span>
-                  <span className="font-mono text-lg font-bold text-sang-vif">{r.total_points}</span>
-                  <span className="text-chalk/30 text-xs">{String.fromCharCode(8594)}</span>
+                  <span className="font-mono text-xs text-chalk/60 shrink-0">{r.exact_scores} exacts</span>
+                  <span className="font-mono text-lg font-bold text-sang-vif shrink-0">{r.total_points}</span>
+                  <span className="text-chalk/30 text-xs shrink-0">{String.fromCharCode(8594)}</span>
                 </Link>
               </PodiumRow>
             </li>
@@ -83,9 +81,7 @@ export default async function Classement() {
               <img
                 src={BADGE_INFOS[t].img}
                 alt={BADGE_INFOS[t].label}
-                width={110}
-                height={110}
-                style={{ width: 110, height: 110, objectFit: 'contain', flexShrink: 0 }}
+                className="w-16 h-16 md:w-24 md:h-24 object-contain shrink-0"
                 loading="lazy"
               />
               <div className="min-w-0">
