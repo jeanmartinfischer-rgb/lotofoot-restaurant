@@ -14,6 +14,8 @@ export default async function Home() {
   if (!user) redirect('/login');
 
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+  const isGuest = profile?.is_guest ?? false;
+
   const { data: rangs } = await supabase.from('leaderboard_season').select('*').order('rang');
   const me = rangs?.find((r: any) => r.user_id === user.id);
   const top3 = (rangs ?? []).slice(0, 3);
@@ -89,7 +91,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {top3.length > 0 && (
+      {!isGuest && top3.length > 0 && (
         <section>
           <div className="mb-3 flex items-baseline justify-between">
             <h2 className="font-display text-sm">PODIUM</h2>
