@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient, createAdmin } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
+import DeleteUserButton from '@/components/DeleteUserButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,6 +70,47 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
       redirect('/admin?msg=' + encodeURIComponent('Erreur: ' + error.message));
     }
     redirect('/admin?msg=' + encodeURIComponent('Mot de passe de ' + pseudo + ' change : ' + newPwd));
+  }
+
+  async function deleteUser(formData: FormData) {
+    'use server';
+    const admin = createAdmin();
+    const id = formData.get('id') as string;
+    const pseudo = (formData.get('pseudo') as string) ?? '';
+
+    // Securite : on ne supprime jamais un compte admin
+    const { data: target } = await admin.from('profiles').select('is_admin').eq('id', id).single();
+    if (target?.is_admin) {
+      redirect('/admin?msg=' + encodeURIComponent('Impossible de supprimer un compte admin.'));
+    }
+
+    // 1) Supprimer les ligues dont ce joueur est proprietaire (+ leurs membres)
+    const { data: ownedLeagues } = await admin.from('leagues').select('id').eq('owner_id', id);
+    for (const lg of ownedLeagues ?? []) {
+      await admin.from('league_members').delete().eq('league_id', lg.id);
+      await admin.from('leagues').delete().eq('id', lg.id);
+    }
+
+    // 2) Supprimer toutes les donnees liees au joueur
+    await admin.from('daily_challenge_answers').delete().eq('user_id', id);
+    await admin.from('predictions').delete().eq('user_id', id);
+    await admin.from('badges').delete().eq('user_id', id);
+    await admin.from('league_members').delete().eq('user_id', id);
+    await admin.from('tournament_predictions').delete().eq('user_id', id);
+    await admin.from('reactions').delete().eq('user_id', id);
+    await admin.from('comments').delete().eq('user_id', id);
+    await admin.from('messages').delete().eq('user_id', id);
+
+    // 3) Supprimer le profil
+    await admin.from('profiles').delete().eq('id', id);
+
+    // 4) Supprimer le compte de connexion (Auth)
+    const { error } = await admin.auth.admin.deleteUser(id);
+    if (error) {
+      redirect('/admin?msg=' + encodeURIComponent('Profil supprime mais erreur Auth: ' + error.message));
+    }
+    revalidatePath('/admin');
+    redirect('/admin?msg=' + encodeURIComponent('Joueur ' + pseudo + ' supprime definitivement.'));
   }
 
   async function syncNow() {
@@ -255,6 +297,13 @@ export default async function Admin({ searchParams }: { searchParams: { msg?: st
                   Reinitialiser
                 </button>
               </form>
+              {!u.is_admin && (
+                <form action={deleteUser} className="border-t border-ligne pt-2">
+                  <input type="hidden" name="id" value={u.id} />
+                  <input type="hidden" name="pseudo" value={u.pseudo} />
+                  <DeleteUserButton pseudo={u.pseudo} />
+                </form>
+              )}
             </li>
           ))}
         </ul>
