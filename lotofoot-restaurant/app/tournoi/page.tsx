@@ -21,6 +21,9 @@ export default async function Tournoi({ searchParams }: { searchParams: { msg?: 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
+  const { data: moi } = await supabase.from('profiles').select('is_guest').eq('id', user.id).single();
+  const isGuest = moi?.is_guest ?? false;
+
   const isClosed = new Date() >= DEADLINE;
 
   const { data: myPred } = await supabase
@@ -29,10 +32,13 @@ export default async function Tournoi({ searchParams }: { searchParams: { msg?: 
     .eq('user_id', user.id)
     .single();
 
-  const { data: allPreds } = await supabase
-    .from('tournament_predictions')
-    .select('*, profiles(pseudo)')
-    .order('created_at');
+  // Les pronostics de toute l'equipe ne sont charges que pour les membres (pas les invites)
+  const { data: allPreds } = isGuest
+    ? { data: [] as any[] }
+    : await supabase
+        .from('tournament_predictions')
+        .select('*, profiles(pseudo)')
+        .order('created_at');
 
   const winnerCount: Record<string, number> = {};
   for (const p of allPreds ?? []) {
@@ -139,7 +145,7 @@ export default async function Tournoi({ searchParams }: { searchParams: { msg?: 
         </form>
       )}
 
-      {sortedWinners.length > 0 && (
+      {!isGuest && sortedWinners.length > 0 && (
         <section className="rounded-2xl border border-ligne bg-ardoise p-4 space-y-3">
           <h2 className="font-display text-sm">PALMARES DE L'EQUIPE</h2>
           <p className="font-mono text-xs text-chalk/40">{totalVotes} pronostic(s)</p>
@@ -162,7 +168,7 @@ export default async function Tournoi({ searchParams }: { searchParams: { msg?: 
         </section>
       )}
 
-      {allPreds && allPreds.length > 0 && (
+      {!isGuest && allPreds && allPreds.length > 0 && (
         <section className="rounded-2xl border border-ligne bg-ardoise p-4">
           <h2 className="font-display text-sm mb-3">QUI MISE SUR QUOI</h2>
           <div className="space-y-1">
