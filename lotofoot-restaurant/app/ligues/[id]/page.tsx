@@ -1,15 +1,12 @@
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase-server';
-
 export const dynamic = 'force-dynamic';
-
 const PERIODES: Record<string, string> = {
   week: 'Semaine',
   month: 'Mois',
   season: 'Saison',
 };
-
 export default async function LigueClassement({
   params,
   searchParams,
@@ -20,36 +17,28 @@ export default async function LigueClassement({
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
-
   const ligueId = Number(params.id);
   if (Number.isNaN(ligueId)) notFound();
-
   const periode = ['week', 'month', 'season'].includes(searchParams.p ?? '')
     ? (searchParams.p as string)
     : 'season';
-
   const { data: ligue } = await supabase
     .from('leagues')
     .select('id, name, code')
     .eq('id', ligueId)
     .maybeSingle();
-
   if (!ligue) notFound();
-
   const { data: membership } = await supabase
     .from('league_members')
     .select('id')
     .eq('league_id', ligueId)
     .eq('user_id', user.id)
     .maybeSingle();
-
   if (!membership) notFound();
-
   const { data: classement } = await supabase.rpc('league_leaderboard', {
     p_league_id: ligueId,
     p_period: periode,
   });
-
   const rows = (classement ?? []) as Array<{
     user_id: string;
     pseudo: string;
@@ -58,7 +47,6 @@ export default async function LigueClassement({
     exact_scores: number;
     rang: number;
   }>;
-
   return (
     <div className="space-y-4">
       <div className="flex items-baseline justify-between">
@@ -67,12 +55,10 @@ export default async function LigueClassement({
           retour
         </Link>
       </div>
-
       <div className="flex items-center justify-between rounded-2xl border border-ligne bg-ardoise px-4 py-2">
         <span className="font-mono text-xs text-chalk/50">code a partager</span>
         <span className="font-mono text-sm text-sang-vif tracking-widest">{ligue.code}</span>
       </div>
-
       <div className="flex gap-2">
         {Object.entries(PERIODES).map(([key, label]) => (
           <Link
@@ -89,7 +75,6 @@ export default async function LigueClassement({
           </Link>
         ))}
       </div>
-
       <section className="rounded-2xl border border-ligne bg-ardoise p-4">
         {rows.length === 0 ? (
           <p className="text-sm text-chalk/50 text-center py-4">
@@ -107,7 +92,7 @@ export default async function LigueClassement({
               >
                 <span className="flex items-center gap-3">
                   <span className="font-mono text-xs text-chalk/40 w-6">#{r.rang}</span>
-                  <span className={'text-sm ' + (r.user_id === user.id ? 'text-sang-vif font-bold' : 'text-chalk/80')}>
+                  <span className={'font-graff text-lg tracking-wide ' + (r.user_id === user.id ? 'text-sang-vif' : 'text-chalk/80')}>
                     {r.pseudo}
                   </span>
                 </span>
