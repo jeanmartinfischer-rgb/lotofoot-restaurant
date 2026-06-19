@@ -19,6 +19,7 @@ export default async function Stats() {
 
   const { data: profile } = await supabase
     .from('profiles').select('*').eq('id', user.id).single();
+  const isGuest = profile?.is_guest ?? false;
 
   const { data: preds } = await supabase
     .from('predictions')
@@ -36,8 +37,10 @@ export default async function Stats() {
   const { data: badges } = await supabase
     .from('badges').select('*').eq('user_id', user.id);
 
-  const { data: allPlayers } = await supabase
-    .from('leaderboard_season').select('total_points');
+  // La moyenne de l'equipe n'est calculee que pour les membres (pas les invites)
+  const { data: allPlayers } = isGuest
+    ? { data: [] as any[] }
+    : await supabase.from('leaderboard_season').select('total_points');
 
   const totalParis = preds?.length ?? 0;
   const bonsResultats = preds?.filter((p) => p.is_correct_result).length ?? 0;
@@ -67,21 +70,23 @@ export default async function Stats() {
     <div className="space-y-4">
       <div className="flex items-baseline justify-between">
         <h1 className="font-display text-2xl">MES STATS</h1>
-        <p className="font-mono text-xs text-chalk/50">{profile?.pseudo}</p>
+        <p className="font-graff text-lg tracking-wide">{profile?.pseudo}</p>
       </div>
 
       <section className="rounded-2xl border border-sang bg-pitch p-5 text-center" style={{ boxShadow: '0 0 24px 0 rgba(212,175,55,0.15)' }}>
         <p className="font-mono text-5xl font-bold text-sang-vif">{mesPoints}</p>
         <p className="text-xs text-chalk/60 mt-1">points cette saison</p>
-        <div className="mt-3 flex items-center justify-center gap-4 text-sm">
-          <span className="font-mono">{rang?.rang ? '#' + rang.rang : '-'} <span className="text-chalk/50 text-xs">sur {allPlayers?.length ?? 0}</span></span>
-          <span className="text-chalk/30">|</span>
-          {ecart >= 0 ? (
-            <span className="font-mono text-green-400">{String.fromCharCode(8593)} +{ecart} pts vs moyenne</span>
-          ) : (
-            <span className="font-mono text-chalk/50">{String.fromCharCode(8595)} {ecart} pts vs moyenne</span>
-          )}
-        </div>
+        {!isGuest && (
+          <div className="mt-3 flex items-center justify-center gap-4 text-sm">
+            <span className="font-mono">{rang?.rang ? '#' + rang.rang : '-'} <span className="text-chalk/50 text-xs">sur {allPlayers?.length ?? 0}</span></span>
+            <span className="text-chalk/30">|</span>
+            {ecart >= 0 ? (
+              <span className="font-mono text-green-400">{String.fromCharCode(8593)} +{ecart} pts vs moyenne</span>
+            ) : (
+              <span className="font-mono text-chalk/50">{String.fromCharCode(8595)} {ecart} pts vs moyenne</span>
+            )}
+          </div>
+        )}
       </section>
 
       <section className="rounded-2xl border border-ligne bg-ardoise p-4 space-y-3">
