@@ -50,24 +50,12 @@ export async function GET(req: NextRequest) {
 
   // ============================================================
   // ETAPE 0 : Y a-t-il une raison de travailler maintenant ?
-  //   On appelle l'API foot si :
-  //   - un match est marque en cours (live / halftime), OU
-  //   - un match commence dans moins de 30 min, OU
-  //   - un match dont l'heure de coup d'envoi est DEJA PASSEE
-  //     mais qui n'est pas encore termine (couvre le cas ou
-  //     l'API tarde a basculer le match en "live" : on continue
-  //     a interroger tant que le match n'est pas fini), OU
-  //   - un match termine dans les 3 dernieres heures.
-  //   Sinon : on s'arrete tout de suite, sans toucher l'API.
-  //   Le parametre ?force=1 force un passage complet.
   // ============================================================
   const force = req.nextUrl.searchParams.get('force') === '1';
   if (!force) {
     const now = Date.now();
     const soon = new Date(now + 30 * 60 * 1000).toISOString();
     const nowIso = new Date(now).toISOString();
-    // Un match "commence" au plus tard 3h avant maintenant est
-    // considere encore en cours s'il n'est pas marque termine.
     const threeHoursAgo = new Date(now - 3 * 60 * 60 * 1000).toISOString();
 
     const { data: liveMatches } = await admin
@@ -84,9 +72,6 @@ export async function GET(req: NextRequest) {
       .lte('kickoff', soon)
       .limit(1);
 
-    // Cas cle : heure de coup d'envoi passee (dans les 3 dernieres
-    // heures) mais match toujours pas termine -> on doit continuer
-    // a interroger l'API meme s'il est encore marque "scheduled".
     const { data: inProgress } = await admin
       .from('matches')
       .select('id')
@@ -127,6 +112,7 @@ export async function GET(req: NextRequest) {
     defi_genere: false,
     defis_resolus: 0,
     streaks_maj: 0,
+    badges_maj: 0,
     errors: [] as string[],
   };
 
@@ -371,6 +357,66 @@ export async function GET(req: NextRequest) {
     }
   } catch (err) {
     results.errors.push('Erreur resolution defi: ' + String(err));
+  }
+
+  // ============================================================
+  // ETAPE 6 : Recalculer les badges de tous les joueurs
+  //   Sniper           = au moins 1 score exact
+  //   Super Sniper     = au moins 3 scores exacts
+  //   Premiere victoire = au moins 1 bon resultat
+  //   Leader           = 1er du classement general
+  // ============================================================
+  try {
+    const { data: joueurs } = await admin
+      .from('profiles')
+      .select('id')
+      .eq('is_guest', false);
+
+    for (const j of joueurs ?? []) {
+      const { count: exacts } = await admin
+        .from('predictions')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', j.id)
+        .eq('is_exact_score', true);
+
+      const { count: bons } = await admin
+        .from('predictions')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', j.id)
+        .eq('is_correct_result', true);
+
+      const aDroitA: { type: string; label: string }[] = [];
+      if ((exacts ?? 0) >= 1) aDroitA.push({ type: 'sniper', label: 'Sniper' });
+      if ((exacts ?? 0) >= 3) aDroitA.push({ type: 'super_sniper', label: 'Super Sniper' });
+      if ((bons ?? 0) >= 1) aDroitA.push({ type: 'premiere_victoire', label: 'Premiere victoire' });
+
+      for (const b of aDroitA) {
+        // on verifie s'il l'a deja, sinon on l'ajoute
+        const { count: existe } = await admin
+          .from('badges')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', j.id)
+          .eq('type', b.type);
+        if (!existe) {
+          await admin.from('badges').insert({ user_id: j.id, type: b.type, label: b.label });
+          results.badges_maj++;
+        }
+      }
+    }
+
+    // Leader : on repart a zero et on donne au 1er du classement
+    const { data: top } = await admin
+      .from('leaderboard_season')
+      .select('user_id')
+      .eq('rang', 1)
+      .maybeSingle();
+    if (top) {
+      await admin.from('badges').delete().eq('type', 'leader');
+      await admin.from('badges').insert({ user_id: top.user_id, type: 'leader', label: 'Leader' });
+      results.badges_maj++;
+    }
+  } catch (err) {
+    results.errors.push('Erreur calcul badges: ' + String(err));
   }
 
   return NextResponse.json({
