@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase-server';
 import MatchCard from '@/components/MatchCard';
 import Crown from '@/components/Crown';
 import Avatar from '@/components/Avatar';
+import DefiAccueil from '@/components/DefiAccueil';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,6 +40,25 @@ export default async function Home() {
   const predByMatch = new Map((preds ?? []).map((p: any) => [p.match_id, p]));
   const streak = profile?.streak_current ?? 0;
 
+  // Defi du jour
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' });
+  const { data: challenge } = await supabase
+    .from('daily_challenges')
+    .select('id, question, options, correct_answer, resolved, locks_at')
+    .eq('challenge_date', today)
+    .maybeSingle();
+  let defiAnswer: string | null = null;
+  if (challenge) {
+    const { data: ans } = await supabase
+      .from('daily_challenge_answers')
+      .select('answer')
+      .eq('challenge_id', challenge.id)
+      .eq('user_id', user.id)
+      .maybeSingle();
+    defiAnswer = ans?.answer ?? null;
+  }
+  const defiLocked = challenge ? new Date(challenge.locks_at).getTime() <= Date.now() : false;
+
   return (
     <div className="space-y-6">
       <section className="text-center space-y-1">
@@ -51,6 +71,8 @@ export default async function Home() {
           </div>
         )}
       </section>
+
+      <DefiAccueil userId={user.id} challenge={challenge ?? null} initialAnswer={defiAnswer} isLocked={defiLocked} />
 
       <section className="grid grid-cols-3 gap-3 text-center">
         <div className="glass rounded-2xl p-3">
