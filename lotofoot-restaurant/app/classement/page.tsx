@@ -40,9 +40,9 @@ export default async function Classement() {
                   </span>
                   <Avatar avatarUrl={r.avatar_url} pseudo={r.pseudo} size={40} />
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold truncate flex items-center gap-1.5">
+                    <p className="truncate flex items-center gap-1.5">
                       {r.rang === 1 && <Crown size={20} />}
-                      <span className="truncate">{r.pseudo}</span>
+                      <span className="font-graff text-xl tracking-wide truncate">{r.pseudo}</span>
                     </p>
                     {mesBadges.length > 0 && (
                       <div className="flex flex-wrap items-center gap-1.5 mt-1">
