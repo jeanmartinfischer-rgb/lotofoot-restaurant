@@ -25,6 +25,7 @@ export default function MonProfilClient({
 
   const [pseudo, setPseudo] = useState(initialPseudo);
   const [avatar, setAvatar] = useState(initialAvatar);
+  const [showAvatars, setShowAvatars] = useState(false);
   const [savingInfo, setSavingInfo] = useState(false);
   const [infoMsg, setInfoMsg] = useState<string | null>(null);
 
@@ -82,15 +83,44 @@ export default function MonProfilClient({
       <h1 className="font-display text-2xl">MON PROFIL</h1>
 
       <section className="glass-gold rounded-2xl p-5 text-center space-y-3">
-        <div className="w-24 h-24 mx-auto rounded-full overflow-hidden border-2 border-sang bg-ardoise flex items-center justify-center">
-          {hasAvatar ? (
-            <img src={avatarSrc(avatar)} alt="avatar" className="w-full h-full object-cover" />
-          ) : (
-            <span className="font-display text-3xl text-chalk">{(pseudo || '?').charAt(0).toUpperCase()}</span>
-          )}
+        <div className="relative w-24 h-24 mx-auto">
+          <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-sang bg-ardoise flex items-center justify-center">
+            {hasAvatar ? (
+              <img src={avatarSrc(avatar)} alt="avatar" className="w-full h-full object-cover" />
+            ) : (
+              <span className="font-display text-3xl text-chalk">{(pseudo || '?').charAt(0).toUpperCase()}</span>
+            )}
+          </div>
+          <button
+            onClick={() => setShowAvatars((v) => !v)}
+            aria-label="Changer d'avatar"
+            className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-sang border-2 border-pitch flex items-center justify-center text-chalk hover:bg-sang-vif transition-colors"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              {showAvatars ? <path d="M5 12h14" /> : <><path d="M12 5v14" /><path d="M5 12h14" /></>}
+            </svg>
+          </button>
         </div>
-        <p className="font-display text-xl">{pseudo || 'Mon pseudo'}</p>
+        <p className="font-graff text-3xl tracking-wide">{pseudo || 'Mon pseudo'}</p>
       </section>
+
+      {showAvatars && (
+        <section className="rounded-2xl border border-ligne bg-ardoise p-4">
+          <h2 className="font-display text-sm mb-3">CHOISIR UN AVATAR</h2>
+          <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 max-h-72 overflow-y-auto">
+            {Array.from({ length: AVATAR_COUNT }, (_, i) => String(i + 1)).map((num) => (
+              <button
+                key={num}
+                onClick={() => { setAvatar(num); setShowAvatars(false); }}
+                className={'rounded-full overflow-hidden border-2 transition ' +
+                  (avatar === num ? 'border-sang-vif scale-105' : 'border-transparent hover:border-chalk/30')}
+              >
+                <img src={'/avatar-' + num + '.png'} alt={'avatar ' + num} className="w-full aspect-square object-cover" />
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="rounded-2xl border border-ligne bg-ardoise p-4 space-y-2">
         <h2 className="font-display text-sm">MON PSEUDO</h2>
@@ -101,22 +131,6 @@ export default function MonProfilClient({
           placeholder="Ton pseudo"
           className="w-full rounded-xl border border-ligne bg-pitch px-4 py-3 text-sm text-chalk outline-none focus:border-sang-vif"
         />
-      </section>
-
-      <section className="rounded-2xl border border-ligne bg-ardoise p-4">
-        <h2 className="font-display text-sm mb-3">CHOISIR UN AVATAR</h2>
-        <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 max-h-72 overflow-y-auto">
-          {Array.from({ length: AVATAR_COUNT }, (_, i) => String(i + 1)).map((num) => (
-            <button
-              key={num}
-              onClick={() => setAvatar(num)}
-              className={'rounded-full overflow-hidden border-2 transition ' +
-                (avatar === num ? 'border-sang-vif scale-105' : 'border-transparent hover:border-chalk/30')}
-            >
-              <img src={'/avatar-' + num + '.png'} alt={'avatar ' + num} className="w-full aspect-square object-cover" />
-            </button>
-          ))}
-        </div>
       </section>
 
       <button
