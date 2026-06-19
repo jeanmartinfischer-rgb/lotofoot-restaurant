@@ -232,6 +232,9 @@ export async function GET(req: NextRequest) {
 
   // ============================================================
   // ETAPE 4 : Generer le defi express du jour (s'il n'existe pas)
+  //   - porte sur le MATCH DU SOIR (dernier match entre 18h et minuit
+  //     heure de Paris ; sinon le dernier match de la journee)
+  //   - se cloture 5 minutes AVANT le coup d'envoi de ce match
   // ============================================================
   try {
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' });
@@ -246,17 +249,37 @@ export async function GET(req: NextRequest) {
       const startOfDay = new Date(today + 'T00:00:00+02:00').toISOString();
       const endOfDay = new Date(today + 'T23:59:59+02:00').toISOString();
 
-      const { data: candidate } = await admin
+      // Tous les matchs du jour, tries par heure
+      const { data: matchsDuJour } = await admin
         .from('matches')
         .select('id, home_team, away_team, kickoff')
         .eq('status', 'scheduled')
         .gte('kickoff', startOfDay)
         .lte('kickoff', endOfDay)
-        .order('kickoff', { ascending: true })
-        .limit(1)
-        .maybeSingle();
+        .order('kickoff', { ascending: true });
+
+      let candidate: any = null;
+      if (matchsDuJour && matchsDuJour.length > 0) {
+        // Heure de Paris du coup d'envoi
+        const heureParis = (iso: string) =>
+          Number(new Date(iso).toLocaleString('en-GB', { timeZone: 'Europe/Paris', hour: '2-digit', hour12: false }).slice(0, 2));
+
+        // Matchs du soir : coup d'envoi entre 18h et 23h59 (Paris)
+        const matchsDuSoir = matchsDuJour.filter((m: any) => heureParis(m.kickoff) >= 18);
+
+        if (matchsDuSoir.length > 0) {
+          // le dernier match du soir
+          candidate = matchsDuSoir[matchsDuSoir.length - 1];
+        } else {
+          // sinon, le dernier match de la journee
+          candidate = matchsDuJour[matchsDuJour.length - 1];
+        }
+      }
 
       if (candidate) {
+        // Cloture : 5 minutes avant le coup d'envoi
+        const locksAt = new Date(new Date(candidate.kickoff).getTime() - 5 * 60 * 1000).toISOString();
+
         const types = ['over25', 'goals_range', 'red_card'] as const;
         const type = types[Math.floor(Math.random() * types.length)];
         const affiche = candidate.home_team + ' - ' + candidate.away_team;
@@ -280,7 +303,7 @@ export async function GET(req: NextRequest) {
           type,
           question,
           options,
-          locks_at: candidate.kickoff,
+          locks_at: locksAt,
         });
         results.defi_genere = true;
       }
@@ -361,10 +384,6 @@ export async function GET(req: NextRequest) {
 
   // ============================================================
   // ETAPE 6 : Recalculer les badges de tous les joueurs
-  //   Sniper           = au moins 1 score exact
-  //   Super Sniper     = au moins 3 scores exacts
-  //   Premiere victoire = au moins 1 bon resultat
-  //   Leader           = 1er du classement general
   // ============================================================
   try {
     const { data: joueurs } = await admin
@@ -391,7 +410,6 @@ export async function GET(req: NextRequest) {
       if ((bons ?? 0) >= 1) aDroitA.push({ type: 'premiere_victoire', label: 'Premiere victoire' });
 
       for (const b of aDroitA) {
-        // on verifie s'il l'a deja, sinon on l'ajoute
         const { count: existe } = await admin
           .from('badges')
           .select('*', { count: 'exact', head: true })
@@ -404,7 +422,6 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Leader : on repart a zero et on donne au 1er du classement
     const { data: top } = await admin
       .from('leaderboard_season')
       .select('user_id')
