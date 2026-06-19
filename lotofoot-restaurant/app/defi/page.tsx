@@ -8,9 +8,10 @@ export default async function Defi() {
   if (!user) redirect('/login');
   const { data: profile } = await supabase
     .from('profiles')
-    .select('pseudo, streak_current, streak_best')
+    .select('pseudo, streak_current, streak_best, is_guest')
     .eq('id', user.id)
     .single();
+  const isGuest = profile?.is_guest ?? false;
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' });
   const { data: challenge } = await supabase
     .from('daily_challenges')
@@ -27,13 +28,16 @@ export default async function Defi() {
       .maybeSingle();
     myAnswer = ans ?? null;
   }
-  const { data: ranking } = await supabase
-    .from('profiles')
-    .select('id, pseudo, avatar_url, streak_current, streak_best')
-    .eq('is_guest', false)
-    .order('streak_current', { ascending: false })
-    .order('streak_best', { ascending: false })
-    .limit(100);
+  // Le classement des series n'est charge que pour les membres (pas les invites)
+  const { data: ranking } = isGuest
+    ? { data: [] as any[] }
+    : await supabase
+        .from('profiles')
+        .select('id, pseudo, avatar_url, streak_current, streak_best')
+        .eq('is_guest', false)
+        .order('streak_current', { ascending: false })
+        .order('streak_best', { ascending: false })
+        .limit(100);
   const isLocked = challenge
     ? new Date(challenge.locks_at).getTime() <= Date.now()
     : false;
