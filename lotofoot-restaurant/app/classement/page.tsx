@@ -3,15 +3,7 @@ import Link from 'next/link';
 import Crown from '@/components/Crown';
 import PodiumRow from '@/components/PodiumRow';
 import Avatar from '@/components/Avatar';
-
 export const dynamic = 'force-dynamic';
-
-const TABS = [
-  { key: 'week', label: 'Semaine', view: 'leaderboard_week' },
-  { key: 'month', label: 'Mois', view: 'leaderboard_month' },
-  { key: 'season', label: 'Saison', view: 'leaderboard_season' },
-] as const;
-
 const BADGE_LABELS: Record<string, string> = {
   sniper: 'Sniper',
   super_sniper: 'Super Sniper',
@@ -19,11 +11,9 @@ const BADGE_LABELS: Record<string, string> = {
   leader: 'Leader',
   champion_semaine: 'Champion semaine',
 };
-
-export default async function Classement({ searchParams }: { searchParams: { t?: string } }) {
-  const tab = TABS.find((t) => t.key === searchParams.t) ?? TABS[2];
+export default async function Classement() {
   const supabase = createClient();
-  const { data: rows } = await supabase.from(tab.view).select('*').order('rang').limit(100);
+  const { data: rows } = await supabase.from('leaderboard_season').select('*').order('rang').limit(100);
   const { data: badges } = await supabase.from('badges').select('*');
   const badgesByUser = new Map<string, string[]>();
   for (const b of badges ?? []) {
@@ -33,13 +23,6 @@ export default async function Classement({ searchParams }: { searchParams: { t?:
   return (
     <div className="space-y-4">
       <h1 className="font-display text-2xl">CLASSEMENT</h1>
-      <nav className="flex rounded-xl bg-ardoise border border-ligne p-1 text-sm font-semibold">
-        {TABS.map((t) => (
-          <a key={t.key} href={'/classement?t=' + t.key} className={'flex-1 rounded-lg py-2 text-center ' + (t.key === tab.key ? 'bg-sang text-chalk' : 'text-chalk/60 hover:text-chalk')}>
-            {t.label}
-          </a>
-        ))}
-      </nav>
       <ol className="space-y-2">
         {rows?.map((r) => (
           <li key={r.user_id}>
@@ -77,8 +60,7 @@ export default async function Classement({ searchParams }: { searchParams: { t?:
           <p>Sniper {String.fromCharCode(8212)} 1 score exact</p>
           <p>Super Sniper {String.fromCharCode(8212)} 3 scores exacts</p>
           <p>Premiere victoire {String.fromCharCode(8212)} 1er bon resultat</p>
-          <p>Leader {String.fromCharCode(8212)} 1er du classement saison</p>
-          <p>Champion semaine {String.fromCharCode(8212)} 1er du classement semaine</p>
+          <p>Leader {String.fromCharCode(8212)} 1er du classement general</p>
         </div>
       </div>
     </div>
