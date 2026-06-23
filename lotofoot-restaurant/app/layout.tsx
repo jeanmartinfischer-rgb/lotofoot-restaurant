@@ -4,6 +4,7 @@ import Image from 'next/image';
 import LogoutButton from '@/components/LogoutButton';
 import Splash from '@/components/Splash';
 import AutoRefresh from './auto-refresh';
+import { createClient } from '@/lib/supabase-server';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -16,7 +17,24 @@ export const viewport: Viewport = { themeColor: '#0B0B0D' };
 const ICON = "h-5 w-5 mb-1";
 const LINK = "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg text-[10px] font-semibold text-chalk/70 hover:text-chalk hover:bg-ardoise whitespace-nowrap transition-colors";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Verifier si l'utilisateur connecte est admin (pour afficher l'onglet Admin)
+  let isAdmin = false;
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .maybeSingle();
+      isAdmin = profile?.is_admin ?? false;
+    }
+  } catch {
+    isAdmin = false;
+  }
+
   return (
     <html lang="fr">
       <body className="min-h-dvh">
@@ -70,10 +88,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>
                 Mon profil
               </Link>
-              <Link href="/admin" className={LINK}>
-                <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" /></svg>
-                Admin
-              </Link>
+              {isAdmin && (
+                <Link href="/admin" className={LINK}>
+                  <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" /></svg>
+                  Admin
+                </Link>
+              )}
               <LogoutButton />
             </div>
           </nav>
