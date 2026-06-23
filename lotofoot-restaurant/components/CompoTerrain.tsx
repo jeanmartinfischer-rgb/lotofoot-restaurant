@@ -57,7 +57,7 @@ function TerrainEquipe({ eq }: { eq: Equipe }) {
     if (!lignes.has(ligne)) lignes.set(ligne, []);
     lignes.get(ligne)!.push(j);
   }
-  const lignesTriees = [...lignes.entries()].sort((a, b) => a[0] - b[0]);
+  const lignesTriees = Array.from(lignes.entries()).sort((a, b) => a[0] - b[0]);
   for (const [, joueurs] of lignesTriees) {
     joueurs.sort((a, b) => {
       const ya = a.grid ? parseInt(a.grid.split(':')[1], 10) : 0;
