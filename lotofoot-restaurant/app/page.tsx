@@ -5,6 +5,7 @@ import MatchCard from '@/components/MatchCard';
 import Crown from '@/components/Crown';
 import Avatar from '@/components/Avatar';
 import DefiAccueil from '@/components/DefiAccueil';
+import CompoBouton from '@/components/CompoBouton';
 
 export const dynamic = 'force-dynamic';
 
@@ -137,6 +138,7 @@ export default async function Home() {
                     Mon prono : {(predByMatch.get(m.id) as any).pred_home}-{(predByMatch.get(m.id) as any).pred_away}
                   </p>
                 )}
+                <CompoBouton matchId={m.id} />
               </div>
             ))}
           </div>
