@@ -65,6 +65,9 @@ export default async function Home() {
   return (
     <div className="space-y-6">
       <section className="text-center space-y-1">
+        <div className="flex justify-center mb-2">
+          <Avatar avatarUrl={profile?.avatar_url} pseudo={profile?.pseudo ?? 'Joueur'} size={72} />
+        </div>
         <p className="font-mono text-xs uppercase tracking-widest text-chalk/50">Bonjour</p>
         <h1 className="font-graff text-6xl tracking-wide">{profile?.pseudo ?? 'Joueur'}</h1>
         {streak > 0 && (
