@@ -187,7 +187,9 @@ export async function GET(req: NextRequest) {
           extra_minute: e.time?.extra ?? null,
           team: e.team?.name ?? null,
           player: e.player?.name ?? null,
+          player_id: e.player?.id ?? null,
           assist: e.assist?.name ?? null,
+          assist_id: e.assist?.id ?? null,
           event_type: e.type ?? null,
           detail: e.detail ?? null,
         });
