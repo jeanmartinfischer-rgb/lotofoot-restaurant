@@ -5,6 +5,30 @@ export const dynamic = 'force-dynamic';
 
 const TZ = 'Europe/Paris';
 
+const PAYS_FR: Record<string, string> = {
+  'Algeria': 'Algérie', 'Argentina': 'Argentine', 'Australia': 'Australie',
+  'Austria': 'Autriche', 'Belgium': 'Belgique', 'Bosnia & Herzegovina': 'Bosnie-Herzégovine',
+  'Brazil': 'Brésil', 'Canada': 'Canada', 'Cape Verde Islands': 'Cap-Vert',
+  'Colombia': 'Colombie', 'Congo DR': 'RD Congo', 'Croatia': 'Croatie',
+  'Curaçao': 'Curaçao', 'Czechia': 'Tchéquie', 'Ecuador': 'Équateur',
+  'Egypt': 'Égypte', 'England': 'Angleterre', 'France': 'France',
+  'Germany': 'Allemagne', 'Ghana': 'Ghana', 'Haiti': 'Haïti',
+  'Iran': 'Iran', 'Iraq': 'Irak', 'Ivory Coast': "Côte d'Ivoire",
+  'Japan': 'Japon', 'Jordan': 'Jordanie', 'Mexico': 'Mexique',
+  'Morocco': 'Maroc', 'Netherlands': 'Pays-Bas', 'New Zealand': 'Nouvelle-Zélande',
+  'Norway': 'Norvège', 'Panama': 'Panama', 'Paraguay': 'Paraguay',
+  'Portugal': 'Portugal', 'Qatar': 'Qatar', 'Saudi Arabia': 'Arabie saoudite',
+  'Scotland': 'Écosse', 'Senegal': 'Sénégal', 'South Africa': 'Afrique du Sud',
+  'South Korea': 'Corée du Sud', 'Spain': 'Espagne', 'Sweden': 'Suède',
+  'Switzerland': 'Suisse', 'Tunisia': 'Tunisie', 'Türkiye': 'Turquie',
+  'Uruguay': 'Uruguay', 'USA': 'États-Unis', 'Uzbekistan': 'Ouzbékistan',
+};
+
+function fr(name: string | null | undefined): string {
+  if (!name) return '';
+  return PAYS_FR[name] ?? name;
+}
+
 function PastilleJoueur({ nom, playerId, taille = 36 }: { nom: string | null; playerId: number | null; taille?: number }) {
   const court = (nom ?? '?').split(' ').slice(-1)[0] ?? '?';
   const initiales = court.slice(0, 2).toUpperCase();
@@ -69,8 +93,12 @@ export default async function MatchResume({ params }: { params: { id: string } }
     .eq('user_id', user.id)
     .single();
 
-  const homeEvents = events?.filter((e) => e.team === match.home_team) ?? [];
-  const awayEvents = events?.filter((e) => e.team === match.away_team) ?? [];
+  // L'API renvoie les noms d'equipe en anglais dans match_events.team,
+  // alors que match.home_team est en francais. On compare les noms traduits.
+  const estDomicile = (teamName: string | null) => fr(teamName) === match.home_team;
+
+  const homeEvents = events?.filter((e) => estDomicile(e.team)) ?? [];
+  const awayEvents = events?.filter((e) => !estDomicile(e.team)) ?? [];
 
   const goals = events?.filter((e) => e.event_type === 'Goal') ?? [];
 
@@ -173,7 +201,6 @@ export default async function MatchResume({ params }: { params: { id: string } }
           <div className="space-y-2">
             <h2 className="font-display text-sm">CHRONOLOGIE</h2>
 
-            {/* En-tete equipes : domicile a gauche, exterieur a droite */}
             <div className="flex items-center justify-between px-1 pb-1">
               <div className="flex items-center gap-1.5">
                 {match.home_logo && (
@@ -194,7 +221,7 @@ export default async function MatchResume({ params }: { params: { id: string } }
             <div className="space-y-1.5">
               {events.map((e, i) => {
                 const isGoal = e.event_type === 'Goal';
-                const isHome = e.team === match.home_team;
+                const isHome = estDomicile(e.team);
                 const logo = isHome ? match.home_logo : match.away_logo;
                 return (
                   <div
@@ -203,16 +230,13 @@ export default async function MatchResume({ params }: { params: { id: string } }
                       isGoal ? 'bg-sang/25 border-2 border-sang-vif' : 'glass'
                     } ${isHome ? 'flex-row' : 'flex-row-reverse'}`}
                   >
-                    {/* Drapeau de l'equipe */}
                     {logo && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={logo} alt="" width={22} height={22} style={{ width: 22, height: 22, objectFit: 'contain' }} className="shrink-0" />
                     )}
 
-                    {/* Photo joueur */}
                     <PastilleJoueur nom={e.player} playerId={(e as any).player_id ?? null} taille={36} />
 
-                    {/* Detail de l'action */}
                     <div className={`flex-1 min-w-0 ${isHome ? 'text-left' : 'text-right'}`}>
                       <div className={`flex items-center gap-2 ${isHome ? 'flex-row' : 'flex-row-reverse'}`}>
                         {isGoal && (
@@ -239,7 +263,6 @@ export default async function MatchResume({ params }: { params: { id: string } }
                       {!isGoal && <p className="text-xs text-chalk/40 truncate">{e.detail}</p>}
                     </div>
 
-                    {/* Temps */}
                     <div className="flex flex-col items-center w-9 shrink-0">
                       <span className="text-base leading-none"><EventIcon type={e.event_type} detail={e.detail} /></span>
                       <span className="font-mono text-[11px] text-chalk/60 mt-0.5">
@@ -260,7 +283,7 @@ export default async function MatchResume({ params }: { params: { id: string } }
                   <PastilleJoueur nom={g.player} playerId={(g as any).player_id ?? null} taille={28} />
                   <span className="font-semibold truncate">{g.player}</span>
                   <span className="font-mono text-xs text-chalk/50">{g.minute}'</span>
-                  <span className="text-xs text-chalk/40 truncate">({g.team})</span>
+                  <span className="text-xs text-chalk/40 truncate">({fr(g.team)})</span>
                   {g.detail === 'Penalty' && <span className="text-xs text-chalk/40">pen.</span>}
                   {g.detail === 'Own Goal' && <span className="text-xs text-sang-vif">c.s.c.</span>}
                 </div>
