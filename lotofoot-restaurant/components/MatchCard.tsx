@@ -6,6 +6,7 @@ import { isLocked, msUntilLock, outcomeFromScore, type Outcome } from '@/lib/sco
 import MatchReactions from './MatchReactions';
 import Confetti from './Confetti';
 import SamePredictions from './SamePredictions';
+import CompoTerrain from './CompoTerrain';
 
 export interface MatchRow {
   id: number;
@@ -77,6 +78,7 @@ export default function MatchCard({ match, prediction, userId }: {
   const [error, setError] = useState('');
   const [open, setOpen] = useState(false);
   const [confetti, setConfetti] = useState(0);
+  const [compoOpen, setCompoOpen] = useState(false);
 
   const myOutcome: Outcome | null = home !== '' && away !== '' ? outcomeFromScore(Number(home), Number(away)) : null;
   const aParie = prediction !== null;
@@ -201,6 +203,21 @@ export default function MatchCard({ match, prediction, userId }: {
           ) : (
             <p className="border-t border-ligne pt-2 text-center font-mono text-xs text-chalk/40">Tu n'avais pas parie sur ce match</p>
           )}
+        </div>
+      )}
+
+      {/* Bouton Compo : sur les matchs a venir et en direct */}
+      {!isOver && (
+        <button
+          onClick={() => setCompoOpen((v) => !v)}
+          className="mt-3 block w-full rounded-xl border border-ligne py-2 text-center font-mono text-xs text-chalk/60 hover:text-chalk hover:border-chalk/40 transition-colors"
+        >
+          {compoOpen ? 'Masquer la compo' : 'Compo'}
+        </button>
+      )}
+      {!isOver && compoOpen && (
+        <div className="mt-3">
+          <CompoTerrain matchId={match.id} />
         </div>
       )}
 
