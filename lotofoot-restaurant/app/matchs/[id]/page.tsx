@@ -5,10 +5,31 @@ export const dynamic = 'force-dynamic';
 
 const TZ = 'Europe/Paris';
 
+// Pastille joueur : affiche la photo si player_id existe (etape 2 a venir),
+// sinon un rond avec les initiales. Composant serveur, pas d'etat.
+function PastilleJoueur({ nom, playerId, taille = 36 }: { nom: string | null; playerId: number | null; taille?: number }) {
+  const court = (nom ?? '?').split(' ').slice(-1)[0] ?? '?';
+  const initiales = court.slice(0, 2).toUpperCase();
+  const photo = playerId ? 'https://media.api-sports.io/football/players/' + playerId + '.png' : null;
+  return (
+    <span
+      className="inline-flex items-center justify-center rounded-full border border-chalk/30 bg-ardoise overflow-hidden shrink-0"
+      style={{ width: taille, height: taille }}
+    >
+      {photo ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={photo} alt={nom ?? ''} width={taille} height={taille} style={{ objectFit: 'cover', width: taille, height: taille }} />
+      ) : (
+        <span className="font-mono text-[10px] font-bold text-chalk/70">{initiales}</span>
+      )}
+    </span>
+  );
+}
+
 function EventIcon({ type, detail }: { type: string; detail: string }) {
   if (type === 'Goal') {
     if (detail === 'Own Goal') return <>🥅</>;
-    if (detail === 'Penalty') return <>⚽ P</>;
+    if (detail === 'Penalty') return <>⚽</>;
     return <>⚽</>;
   }
   if (type === 'Card') {
@@ -54,8 +75,6 @@ export default async function MatchResume({ params }: { params: { id: string } }
   const awayEvents = events?.filter((e) => e.team === match.away_team) ?? [];
 
   const goals = events?.filter((e) => e.event_type === 'Goal') ?? [];
-  const cards = events?.filter((e) => e.event_type === 'Card') ?? [];
-  const subs = events?.filter((e) => e.event_type === 'subst') ?? [];
 
   const stats = {
     homeGoals: homeEvents.filter((e) => e.event_type === 'Goal' && e.detail !== 'Own Goal').length,
@@ -72,18 +91,31 @@ export default async function MatchResume({ params }: { params: { id: string } }
     <div className="space-y-4">
       <a href="/matchs" className="text-xs text-chalk/50 hover:text-chalk">← Retour aux matchs</a>
 
+      {/* En-tete : score */}
       <div className="glass-gold rounded-2xl p-4 text-center space-y-2">
         <p className="font-mono text-xs text-chalk/50">
           {new Date(match.kickoff).toLocaleDateString('fr-FR', {
             weekday: 'long', day: 'numeric', month: 'long', timeZone: TZ
           })}
         </p>
-        <div className="flex items-center justify-between gap-2">
-          <p className="flex-1 text-right font-display text-lg leading-tight">{match.home_team}</p>
-          <div className="font-mono text-3xl font-bold px-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex-1 flex flex-col items-center gap-1">
+            {match.home_logo && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={match.home_logo} alt="" width={32} height={32} style={{ width: 32, height: 32, objectFit: 'contain' }} />
+            )}
+            <p className="font-display text-sm leading-tight">{match.home_team}</p>
+          </div>
+          <div className="font-mono text-3xl font-bold px-2 shrink-0">
             {match.home_score ?? '-'} <span className="text-chalk/30">-</span> {match.away_score ?? '-'}
           </div>
-          <p className="flex-1 text-left font-display text-lg leading-tight">{match.away_team}</p>
+          <div className="flex-1 flex flex-col items-center gap-1">
+            {match.away_logo && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={match.away_logo} alt="" width={32} height={32} style={{ width: 32, height: 32, objectFit: 'contain' }} />
+            )}
+            <p className="font-display text-sm leading-tight">{match.away_team}</p>
+          </div>
         </div>
         <span className={`inline-block rounded-full px-3 py-0.5 font-mono text-xs font-bold ${
           match.status === 'finished' ? 'bg-chalk/10 text-chalk/60' :
@@ -96,6 +128,7 @@ export default async function MatchResume({ params }: { params: { id: string } }
         </span>
       </div>
 
+      {/* Mon pronostic */}
       {myPred && (
         <div className="glass rounded-2xl p-3 text-center">
           <p className="font-mono text-xs text-chalk/50 mb-1">MON PRONOSTIC</p>
@@ -117,61 +150,85 @@ export default async function MatchResume({ params }: { params: { id: string } }
 
       {events && events.length > 0 ? (
         <>
+          {/* Stats : 3 colonnes, valeur domicile a gauche / exterieur a droite */}
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="glass rounded-xl p-2">
-              <p className="font-mono text-xl font-bold text-sang-vif">{stats.homeGoals}</p>
-              <p className="text-xs text-chalk/50">Buts</p>
-              <p className="font-mono text-xl font-bold text-sang-vif">{stats.awayGoals}</p>
+              <div className="flex items-center justify-between px-2">
+                <span className="font-mono text-lg font-bold text-sang-vif">{stats.homeGoals}</span>
+                <span className="text-xs text-chalk/50">Buts</span>
+                <span className="font-mono text-lg font-bold text-sang-vif">{stats.awayGoals}</span>
+              </div>
             </div>
             <div className="glass rounded-xl p-2">
-              <p className="font-mono text-xl font-bold text-yellow-400">{stats.homeYellow}</p>
-              <p className="text-xs text-chalk/50">🟨</p>
-              <p className="font-mono text-xl font-bold text-yellow-400">{stats.awayYellow}</p>
+              <div className="flex items-center justify-between px-2">
+                <span className="font-mono text-lg font-bold text-yellow-400">{stats.homeYellow}</span>
+                <span className="text-xs text-chalk/50">🟨</span>
+                <span className="font-mono text-lg font-bold text-yellow-400">{stats.awayYellow}</span>
+              </div>
             </div>
             <div className="glass rounded-xl p-2">
-              <p className="font-mono text-xl font-bold">{stats.homeSubs}</p>
-              <p className="text-xs text-chalk/50">🔄 Rempl.</p>
-              <p className="font-mono text-xl font-bold">{stats.awaySubs}</p>
+              <div className="flex items-center justify-between px-2">
+                <span className="font-mono text-lg font-bold">{stats.homeSubs}</span>
+                <span className="text-xs text-chalk/50">🔄</span>
+                <span className="font-mono text-lg font-bold">{stats.awaySubs}</span>
+              </div>
             </div>
           </div>
 
+          {/* Chronologie : frise verticale */}
           <div className="space-y-2">
             <h2 className="font-display text-sm">CHRONOLOGIE</h2>
-            {events.map((e, i) => {
-              const isHome = e.team === match.home_team;
-              return (
-                <div key={i} className={`flex items-center gap-3 ${isHome ? 'flex-row' : 'flex-row-reverse'}`}>
-                  <div className={`flex-1 glass rounded-xl p-2 ${isHome ? 'text-left' : 'text-right'}`}>
-                    <p className="font-semibold text-sm">{e.player}</p>
-                    {e.assist && e.event_type === 'Goal' && (
-                      <p className="text-xs text-chalk/50">Passe : {e.assist}</p>
-                    )}
-                    {e.event_type === 'subst' && (
-                      <p className="text-xs text-chalk/50">entre : {e.assist}</p>
-                    )}
-                    <p className="text-xs text-chalk/40">{e.detail}</p>
-                  </div>
-                  <div className="flex flex-col items-center gap-0.5 w-14">
-                    <span className="text-lg"><EventIcon type={e.event_type} detail={e.detail} /></span>
-                    <span className="font-mono text-xs text-chalk/60">
-                      {e.minute}{e.extra_minute ? '+' + e.extra_minute : ''}'
+            <div className="space-y-1.5">
+              {events.map((e, i) => {
+                const isGoal = e.event_type === 'Goal';
+                return (
+                  <div
+                    key={i}
+                    className={`flex items-center gap-3 glass rounded-xl p-2.5 ${isGoal ? 'border border-sang/40' : ''}`}
+                  >
+                    {/* Colonne temps */}
+                    <div className="flex flex-col items-center w-10 shrink-0">
+                      <span className="text-lg leading-none"><EventIcon type={e.event_type} detail={e.detail} /></span>
+                      <span className="font-mono text-[11px] text-chalk/60 mt-0.5">
+                        {e.minute}{e.extra_minute ? '+' + e.extra_minute : ''}'
+                      </span>
+                    </div>
+
+                    {/* Photo joueur (initiales pour l'instant, photo des que player_id existe) */}
+                    <PastilleJoueur nom={e.player} playerId={(e as any).player_id ?? null} taille={36} />
+
+                    {/* Detail de l'action */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm truncate">{e.player}</p>
+                      {e.assist && e.event_type === 'Goal' && (
+                        <p className="text-xs text-chalk/50 truncate">Passe : {e.assist}</p>
+                      )}
+                      {e.event_type === 'subst' && (
+                        <p className="text-xs text-chalk/50 truncate">Entre : {e.assist}</p>
+                      )}
+                      <p className="text-xs text-chalk/40 truncate">{e.detail}</p>
+                    </div>
+
+                    {/* Equipe */}
+                    <span className="font-mono text-[10px] text-chalk/40 text-right shrink-0 max-w-[80px] truncate">
+                      {e.team}
                     </span>
                   </div>
-                  <div className="flex-1" />
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
 
+          {/* Buteurs */}
           {goals.length > 0 && (
-            <div className="glass rounded-2xl p-3 space-y-1">
+            <div className="glass rounded-2xl p-3 space-y-2">
               <h3 className="font-display text-xs text-chalk/50">BUTEURS</h3>
               {goals.map((g, i) => (
                 <div key={i} className="flex items-center gap-2 text-sm">
-                  <span>⚽</span>
-                  <span className="font-semibold">{g.player}</span>
+                  <PastilleJoueur nom={g.player} playerId={(g as any).player_id ?? null} taille={28} />
+                  <span className="font-semibold truncate">{g.player}</span>
                   <span className="font-mono text-xs text-chalk/50">{g.minute}'</span>
-                  <span className="text-xs text-chalk/40">({g.team})</span>
+                  <span className="text-xs text-chalk/40 truncate">({g.team})</span>
                   {g.detail === 'Penalty' && <span className="text-xs text-chalk/40">pen.</span>}
                   {g.detail === 'Own Goal' && <span className="text-xs text-sang-vif">c.s.c.</span>}
                 </div>
