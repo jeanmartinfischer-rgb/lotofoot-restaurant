@@ -172,29 +172,49 @@ export default async function MatchResume({ params }: { params: { id: string } }
 
           <div className="space-y-2">
             <h2 className="font-display text-sm">CHRONOLOGIE</h2>
+
+            {/* En-tete equipes : domicile a gauche, exterieur a droite */}
+            <div className="flex items-center justify-between px-1 pb-1">
+              <div className="flex items-center gap-1.5">
+                {match.home_logo && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={match.home_logo} alt="" width={18} height={18} style={{ width: 18, height: 18, objectFit: 'contain' }} />
+                )}
+                <span className="font-mono text-[11px] text-chalk/60 truncate max-w-[120px]">{match.home_team}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-mono text-[11px] text-chalk/60 truncate max-w-[120px]">{match.away_team}</span>
+                {match.away_logo && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={match.away_logo} alt="" width={18} height={18} style={{ width: 18, height: 18, objectFit: 'contain' }} />
+                )}
+              </div>
+            </div>
+
             <div className="space-y-1.5">
               {events.map((e, i) => {
                 const isGoal = e.event_type === 'Goal';
+                const isHome = e.team === match.home_team;
+                const logo = isHome ? match.home_logo : match.away_logo;
                 return (
                   <div
                     key={i}
-                    className={`flex items-center gap-3 rounded-xl p-2.5 ${
-                      isGoal
-                        ? 'bg-sang/25 border-2 border-sang-vif'
-                        : 'glass'
-                    }`}
+                    className={`flex items-center gap-2 rounded-xl p-2.5 ${
+                      isGoal ? 'bg-sang/25 border-2 border-sang-vif' : 'glass'
+                    } ${isHome ? 'flex-row' : 'flex-row-reverse'}`}
                   >
-                    <div className="flex flex-col items-center w-10 shrink-0">
-                      <span className="text-lg leading-none"><EventIcon type={e.event_type} detail={e.detail} /></span>
-                      <span className="font-mono text-[11px] text-chalk/60 mt-0.5">
-                        {e.minute}{e.extra_minute ? '+' + e.extra_minute : ''}'
-                      </span>
-                    </div>
+                    {/* Drapeau de l'equipe */}
+                    {logo && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={logo} alt="" width={22} height={22} style={{ width: 22, height: 22, objectFit: 'contain' }} className="shrink-0" />
+                    )}
 
+                    {/* Photo joueur */}
                     <PastilleJoueur nom={e.player} playerId={(e as any).player_id ?? null} taille={36} />
 
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                    {/* Detail de l'action */}
+                    <div className={`flex-1 min-w-0 ${isHome ? 'text-left' : 'text-right'}`}>
+                      <div className={`flex items-center gap-2 ${isHome ? 'flex-row' : 'flex-row-reverse'}`}>
                         {isGoal && (
                           <span className="rounded-md bg-sang-vif px-2 py-0.5 font-display text-xs font-bold text-chalk shrink-0">
                             BUT
@@ -219,9 +239,13 @@ export default async function MatchResume({ params }: { params: { id: string } }
                       {!isGoal && <p className="text-xs text-chalk/40 truncate">{e.detail}</p>}
                     </div>
 
-                    <span className="font-mono text-[10px] text-chalk/40 text-right shrink-0 max-w-[80px] truncate">
-                      {e.team}
-                    </span>
+                    {/* Temps */}
+                    <div className="flex flex-col items-center w-9 shrink-0">
+                      <span className="text-base leading-none"><EventIcon type={e.event_type} detail={e.detail} /></span>
+                      <span className="font-mono text-[11px] text-chalk/60 mt-0.5">
+                        {e.minute}{e.extra_minute ? '+' + e.extra_minute : ''}'
+                      </span>
+                    </div>
                   </div>
                 );
               })}
