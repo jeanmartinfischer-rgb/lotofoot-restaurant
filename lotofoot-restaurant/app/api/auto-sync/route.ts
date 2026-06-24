@@ -159,8 +159,55 @@ export async function GET(req: NextRequest) {
   }
 
   // ============================================================
-  // ETAPE 2 : Importer les evenements des matchs termines
+  // ETAPE 2 : Importer les evenements des matchs
+  //   - matchs EN COURS (live/halftime) : on rafraichit a chaque passage
+  //     (on supprime puis on reinsere, pour avoir le deroule a jour)
+  //   - matchs TERMINES : on importe une seule fois si rien en base
+  //     (comportement inchange)
   // ============================================================
+
+  // Fonction qui importe les events d'un match donne depuis l'API
+  const importerEvents = async (matchDbId: number, fixtureId: number) => {
+    const res = await fetch(
+      'https://v3.football.api-sports.io/fixtures/events?fixture=' + fixtureId,
+      { headers: { 'x-apisports-key': key }, cache: 'no-store' }
+    );
+    const json = await res.json();
+    for (const e of json.response ?? []) {
+      await admin.from('match_events').insert({
+        match_id: matchDbId,
+        minute: e.time?.elapsed ?? null,
+        extra_minute: e.time?.extra ?? null,
+        team: e.team?.name ?? null,
+        player: e.player?.name ?? null,
+        player_id: e.player?.id ?? null,
+        assist: e.assist?.name ?? null,
+        assist_id: e.assist?.id ?? null,
+        event_type: e.type ?? null,
+        detail: e.detail ?? null,
+      });
+      results.events_importes++;
+    }
+  };
+
+  // 2a) Matchs EN COURS : rafraichir le deroule
+  const { data: liveForEvents } = await admin
+    .from('matches')
+    .select('id, api_fixture_id')
+    .in('status', ['live', 'halftime'])
+    .not('api_fixture_id', 'is', null);
+
+  for (const match of liveForEvents ?? []) {
+    try {
+      // On efface les events de CE match en cours, puis on les reimporte a jour
+      await admin.from('match_events').delete().eq('match_id', match.id);
+      await importerEvents(match.id, match.api_fixture_id);
+    } catch (err) {
+      results.errors.push('Erreur events live match ' + match.id + ': ' + String(err));
+    }
+  }
+
+  // 2b) Matchs TERMINES : import unique si rien en base (comportement inchange)
   const { data: finishedMatches } = await admin
     .from('matches')
     .select('id, api_fixture_id')
@@ -175,26 +222,7 @@ export async function GET(req: NextRequest) {
     if (count && count > 0) continue;
 
     try {
-      const res = await fetch(
-        'https://v3.football.api-sports.io/fixtures/events?fixture=' + match.api_fixture_id,
-        { headers: { 'x-apisports-key': key }, cache: 'no-store' }
-      );
-      const json = await res.json();
-      for (const e of json.response ?? []) {
-        await admin.from('match_events').insert({
-          match_id: match.id,
-          minute: e.time?.elapsed ?? null,
-          extra_minute: e.time?.extra ?? null,
-          team: e.team?.name ?? null,
-          player: e.player?.name ?? null,
-          player_id: e.player?.id ?? null,
-          assist: e.assist?.name ?? null,
-          assist_id: e.assist?.id ?? null,
-          event_type: e.type ?? null,
-          detail: e.detail ?? null,
-        });
-        results.events_importes++;
-      }
+      await importerEvents(match.id, match.api_fixture_id);
     } catch (err) {
       results.errors.push('Erreur events match ' + match.id + ': ' + String(err));
     }
