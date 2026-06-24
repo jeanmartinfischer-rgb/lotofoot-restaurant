@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 const PAYS_FR: Record<string, string> = {
   'Algeria': 'Algérie', 'Argentina': 'Argentine', 'Australia': 'Australie',
@@ -34,6 +34,8 @@ type MatchInfo = {
   home_score: number | null;
   away_score: number | null;
   status: string;
+  minute_actuelle: number | null;
+  minute_extra: number | null;
 };
 type Evt = {
   id: number;
@@ -88,6 +90,11 @@ export default function LiveMatch({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
+  // Chrono fluide : minute officielle (API) + secondes ecoulees depuis la derniere maj
+  const [chrono, setChrono] = useState<number | null>(null);
+  const baseMinute = useRef<number | null>(null);
+  const baseAt = useRef<number>(Date.now());
+
   useEffect(() => {
     let actif = true;
     const charger = () => {
@@ -99,6 +106,10 @@ export default function LiveMatch({ params }: { params: { id: string } }) {
           setMatch(data.match);
           setEvents(data.events ?? []);
           setLoading(false);
+          // Recaler le chrono sur la minute officielle a chaque maj
+          baseMinute.current = data.match.minute_actuelle ?? null;
+          baseAt.current = Date.now();
+          setChrono(data.match.minute_actuelle ?? null);
         })
         .catch(() => { if (actif) { setNotFound(true); setLoading(false); } });
     };
@@ -106,6 +117,17 @@ export default function LiveMatch({ params }: { params: { id: string } }) {
     const t = setInterval(charger, 20000); // rafraichit toutes les 20 s
     return () => { actif = false; clearInterval(t); };
   }, [id]);
+
+  // Fait avancer le chrono localement (sauf a la mi-temps / hors live)
+  useEffect(() => {
+    const isLive = match?.status === 'live';
+    if (!isLive || baseMinute.current === null) return;
+    const t = setInterval(() => {
+      const secEcoulees = Math.floor((Date.now() - baseAt.current) / 1000);
+      setChrono((baseMinute.current ?? 0) + Math.floor(secEcoulees / 60));
+    }, 1000);
+    return () => clearInterval(t);
+  }, [match?.status, match?.minute_actuelle]);
 
   if (loading) {
     return <p className="text-center text-sm text-chalk/60 py-8">Chargement du match...</p>;
@@ -126,6 +148,15 @@ export default function LiveMatch({ params }: { params: { id: string } }) {
     const mb = (b.minute ?? 0) + (b.extra_minute ?? 0) / 100;
     return mb - ma; // plus recent en haut
   });
+
+  // Texte du chrono a afficher
+  let chronoTxt = '';
+  if (match.status === 'halftime') {
+    chronoTxt = 'Mi-temps';
+  } else if (match.status === 'live') {
+    const m = chrono ?? match.minute_actuelle ?? 0;
+    chronoTxt = match.minute_extra ? `${m}+${match.minute_extra}'` : `${m}'`;
+  }
 
   return (
     <div className="space-y-4">
@@ -152,16 +183,21 @@ export default function LiveMatch({ params }: { params: { id: string } }) {
           </div>
         </div>
         {isLive ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-sang-vif px-3 py-0.5 font-mono text-xs font-bold text-chalk animate-pulse">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-chalk"></span>
-            {match.status === 'halftime' ? 'MI-TEMPS' : 'EN DIRECT'}
-          </span>
+          <div className="flex flex-col items-center gap-1">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-sang-vif px-3 py-0.5 font-mono text-xs font-bold text-chalk animate-pulse">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-chalk"></span>
+              {match.status === 'halftime' ? 'MI-TEMPS' : 'EN DIRECT'}
+            </span>
+            {chronoTxt && (
+              <span className="font-mono text-2xl font-bold text-chalk">{chronoTxt}</span>
+            )}
+            <p className="font-mono text-[10px] text-chalk/40">Mise a jour automatique</p>
+          </div>
         ) : (
           <span className="inline-block rounded-full bg-chalk/10 px-3 py-0.5 font-mono text-xs font-bold text-chalk/60">
             {match.status === 'finished' ? 'TERMINE' : 'A VENIR'}
           </span>
         )}
-        {isLive && <p className="font-mono text-[10px] text-chalk/40">Mise a jour automatique</p>}
       </div>
 
       <div className="space-y-2">
