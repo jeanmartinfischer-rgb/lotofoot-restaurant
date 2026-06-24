@@ -182,12 +182,8 @@ export default function MatchCard({ match, prediction, userId }: {
       {saved && <p className="mt-2 text-center font-mono text-xs font-bold text-green-400">Pronostic enregistre</p>}
       {error && <p className="mt-2 text-center font-mono text-xs text-sang-vif">{error}</p>}
 
-      {/* Bouton Suivre en direct : seulement sur les matchs en cours */}
       {isLive && (
-        
-          href={'/live/' + match.id}
-          className="mt-3 flex items-center justify-center gap-2 w-full rounded-xl border border-sang-vif bg-sang/15 py-2.5 text-center font-mono text-sm font-bold text-chalk hover:border-sang transition-colors"
-        >
+        <a href={'/live/' + match.id} className="mt-3 flex items-center justify-center gap-2 w-full rounded-xl border border-sang-vif bg-sang/15 py-2.5 text-center font-mono text-sm font-bold text-chalk hover:border-sang transition-colors">
           <span className="inline-block w-2 h-2 rounded-full bg-sang-vif animate-pulse"></span>
           Suivre le match en direct
         </a>
@@ -217,12 +213,8 @@ export default function MatchCard({ match, prediction, userId }: {
         </div>
       )}
 
-      {/* Bouton Compo : sur les matchs a venir et en direct */}
       {!isOver && (
-        <button
-          onClick={() => setCompoOpen((v) => !v)}
-          className="mt-3 block w-full rounded-xl border border-ligne py-2 text-center font-mono text-xs text-chalk/60 hover:text-chalk hover:border-chalk/40 transition-colors"
-        >
+        <button onClick={() => setCompoOpen((v) => !v)} className="mt-3 block w-full rounded-xl border border-ligne py-2 text-center font-mono text-xs text-chalk/60 hover:text-chalk hover:border-chalk/40 transition-colors">
           {compoOpen ? 'Masquer la compo' : 'Compo'}
         </button>
       )}
