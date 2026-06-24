@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 
   const { data: match, error } = await admin
     .from('matches')
-    .select('id, home_team, away_team, home_logo, away_logo, home_score, away_score, status')
+    .select('id, home_team, away_team, home_logo, away_logo, home_score, away_score, status, minute_actuelle, minute_extra')
     .eq('id', matchId)
     .maybeSingle();
 
