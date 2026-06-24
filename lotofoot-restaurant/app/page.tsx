@@ -141,6 +141,10 @@ export default async function Home() {
                     Mon prono : {(predByMatch.get(m.id) as any).pred_home}-{(predByMatch.get(m.id) as any).pred_away}
                   </p>
                 )}
+                <a href={'/live/' + m.id} className="mt-3 flex items-center justify-center gap-2 w-full rounded-xl border border-sang-vif bg-sang/15 py-2.5 text-center font-mono text-sm font-bold text-chalk hover:border-sang transition-colors">
+                  <span className="inline-block w-2 h-2 rounded-full bg-sang-vif animate-pulse"></span>
+                  Suivre le match en direct
+                </a>
                 <CompoBouton matchId={m.id} />
               </div>
             ))}
