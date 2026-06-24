@@ -182,6 +182,17 @@ export default function MatchCard({ match, prediction, userId }: {
       {saved && <p className="mt-2 text-center font-mono text-xs font-bold text-green-400">Pronostic enregistre</p>}
       {error && <p className="mt-2 text-center font-mono text-xs text-sang-vif">{error}</p>}
 
+      {/* Bouton Suivre en direct : seulement sur les matchs en cours */}
+      {isLive && (
+        
+          href={'/live/' + match.id}
+          className="mt-3 flex items-center justify-center gap-2 w-full rounded-xl border border-sang-vif bg-sang/15 py-2.5 text-center font-mono text-sm font-bold text-chalk hover:border-sang transition-colors"
+        >
+          <span className="inline-block w-2 h-2 rounded-full bg-sang-vif animate-pulse"></span>
+          Suivre le match en direct
+        </a>
+      )}
+
       {isOver && (
         <div className="rounded-xl border border-ligne bg-pitch p-3 space-y-2">
           <div className="flex items-center justify-between">
