@@ -146,6 +146,8 @@ export async function GET(req: NextRequest) {
             status,
             home_score: home,
             away_score: away,
+            minute_actuelle: f.fixture.status.elapsed ?? null,
+            minute_extra: f.fixture.status.extra ?? null,
           },
           { onConflict: 'api_fixture_id' }
         );
