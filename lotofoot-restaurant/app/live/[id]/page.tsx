@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState } from 'react';
 
 const PAYS_FR: Record<string, string> = {
   'Algeria': 'Algérie', 'Argentina': 'Argentine', 'Australia': 'Australie',
@@ -81,8 +81,8 @@ function iconFor(type: string | null, detail: string | null) {
   return '•';
 }
 
-export default function LiveMatch({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function LiveMatch({ params }: { params: { id: string } }) {
+  const id = params.id;
   const [match, setMatch] = useState<MatchInfo | null>(null);
   const [events, setEvents] = useState<Evt[]>([]);
   const [loading, setLoading] = useState(true);
