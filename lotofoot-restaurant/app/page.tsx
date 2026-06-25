@@ -6,6 +6,7 @@ import Crown from '@/components/Crown';
 import Avatar from '@/components/Avatar';
 import DefiAccueil from '@/components/DefiAccueil';
 import CompoBouton from '@/components/CompoBouton';
+import CitationDuJour from '@/components/CitationDuJour';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,6 +78,8 @@ export default async function Home() {
           </div>
         )}
       </section>
+
+      <CitationDuJour />
 
       <DefiAccueil userId={user.id} challenge={challenge ?? null} initialAnswer={defiAnswer} isLocked={defiLocked} />
 
