@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Crown from '@/components/Crown';
 import PodiumRow from '@/components/PodiumRow';
 import Avatar from '@/components/Avatar';
+import StatutEnLigne from '@/components/StatutEnLigne';
 export const dynamic = 'force-dynamic';
 
 const BADGE_INFOS: Record<string, { img: string; label: string; desc: string }> = {
@@ -45,6 +46,14 @@ export default async function Classement() {
     if (!badgesByUser.has(b.user_id)) badgesByUser.set(b.user_id, []);
     badgesByUser.get(b.user_id)!.push(b.type);
   }
+
+  // Recuperer le last_seen de tous les joueurs (pour le statut en ligne)
+  const { data: profilsSeen } = await supabase.from('profiles').select('id, last_seen');
+  const seenByUser = new Map<string, string | null>();
+  for (const p of profilsSeen ?? []) {
+    seenByUser.set(p.id, p.last_seen ?? null);
+  }
+
   function badgesTries(types: string[]): string[] {
     return BADGE_ORDRE.filter((t) => types.includes(t));
   }
@@ -67,6 +76,9 @@ export default async function Classement() {
                       {r.rang === 1 && <Crown size={20} />}
                       <span className="font-graff text-xl tracking-wide truncate">{r.pseudo}</span>
                     </p>
+                    <div className="mt-0.5">
+                      <StatutEnLigne lastSeen={seenByUser.get(r.user_id) ?? null} />
+                    </div>
                     {mesBadges.length > 0 && (
                       <div className="flex flex-wrap items-center gap-1.5 mt-1">
                         {mesBadges.map((t) => (
