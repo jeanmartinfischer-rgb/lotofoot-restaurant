@@ -308,7 +308,7 @@ const CITATIONS: string[] = [
 ];
 
 const PAR_JOUR = 6;
-const DELAI_AUTO = 5000;
+const DELAI_AUTO = 8000;
 
 function jourDeLAnnee(): number {
   const now = new Date();
