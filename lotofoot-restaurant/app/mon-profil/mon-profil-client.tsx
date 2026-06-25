@@ -34,6 +34,12 @@ export default function MonProfilClient({
   const [savingPwd, setSavingPwd] = useState(false);
   const [pwdMsg, setPwdMsg] = useState<string | null>(null);
 
+  // Suppression de compte
+  const [showDelete, setShowDelete] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteMsg, setDeleteMsg] = useState<string | null>(null);
+
   const hasAvatar = avatar && (avatar === 'admin' || /^[0-9]+$/.test(avatar));
 
   async function saveInfo() {
@@ -76,6 +82,32 @@ export default function MonProfilClient({
     setPwd2('');
     setPwdMsg('Mot de passe modifie !');
     setTimeout(() => setPwdMsg(null), 2500);
+  }
+
+  async function deleteAccount() {
+    if (deleting) return;
+    setDeleteMsg(null);
+    if (deleteConfirm.trim().toUpperCase() !== 'SUPPRIMER') {
+      setDeleteMsg('Tape SUPPRIMER pour confirmer.');
+      return;
+    }
+    setDeleting(true);
+    try {
+      const res = await fetch('/api/delete-account', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        setDeleting(false);
+        setDeleteMsg(data?.error ?? 'Erreur lors de la suppression.');
+        return;
+      }
+      // Compte supprime : on deconnecte et on renvoie vers la connexion
+      await supabase.auth.signOut();
+      router.push('/login');
+      router.refresh();
+    } catch {
+      setDeleting(false);
+      setDeleteMsg('Erreur lors de la suppression.');
+    }
   }
 
   return (
@@ -166,6 +198,53 @@ export default function MonProfilClient({
           {savingPwd ? 'Modification...' : 'Modifier le mot de passe'}
         </button>
         {pwdMsg && <p className="text-center font-mono text-xs text-chalk/70">{pwdMsg}</p>}
+      </section>
+
+      {/* Zone dangereuse : suppression du compte */}
+      <section className="rounded-2xl border border-sang-vif/40 bg-pitch p-4 space-y-3">
+        <h2 className="font-display text-sm text-sang-vif">ZONE DANGEREUSE</h2>
+        {!showDelete ? (
+          <button
+            onClick={() => { setShowDelete(true); setDeleteMsg(null); }}
+            className="w-full rounded-xl border border-sang-vif/60 bg-sang/10 py-3 font-mono text-sm font-bold text-sang-vif hover:bg-sang/20 transition-colors"
+          >
+            Supprimer mon compte
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <p className="font-mono text-xs text-chalk/80 leading-relaxed">
+              Etes-vous sur de vouloir supprimer votre compte ? Cette action est
+              <b className="text-sang-vif"> irreversible et definitive</b>. Toutes vos donnees
+              (pronostics, badges, ligues, statistiques) seront <b className="text-sang-vif">perdues</b> et ne pourront pas etre recuperees.
+            </p>
+            <p className="font-mono text-xs text-chalk/60">
+              Pour confirmer, tape <b className="text-chalk">SUPPRIMER</b> ci-dessous :
+            </p>
+            <input
+              value={deleteConfirm}
+              onChange={(e) => setDeleteConfirm(e.target.value)}
+              placeholder="Tape SUPPRIMER"
+              className="w-full rounded-xl border border-sang-vif/60 bg-pitch px-4 py-3 text-sm text-chalk outline-none focus:border-sang-vif"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowDelete(false); setDeleteConfirm(''); setDeleteMsg(null); }}
+                disabled={deleting}
+                className="flex-1 rounded-xl border border-ligne bg-ardoise py-3 font-mono text-sm text-chalk/70 hover:text-chalk transition-colors disabled:opacity-40"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={deleteAccount}
+                disabled={deleting || deleteConfirm.trim().toUpperCase() !== 'SUPPRIMER'}
+                className="flex-1 rounded-xl border border-sang-vif bg-sang-vif/20 py-3 font-mono text-sm font-bold text-sang-vif hover:bg-sang-vif/30 transition-colors disabled:opacity-40"
+              >
+                {deleting ? 'Suppression...' : 'Supprimer definitivement'}
+              </button>
+            </div>
+            {deleteMsg && <p className="text-center font-mono text-xs text-sang-vif">{deleteMsg}</p>}
+          </div>
+        )}
       </section>
     </div>
   );
