@@ -24,7 +24,21 @@ export async function middleware(request: NextRequest) {
       },
     }
   );
-  await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // Marquer l'activite du joueur (last_seen), au maximum une fois par minute.
+  // Un cookie "seen_ping" sert de minuteur pour ne pas ecrire en base a chaque clic.
+  if (user) {
+    const dejaPinge = request.cookies.get('seen_ping');
+    if (!dejaPinge) {
+      try {
+        await supabase.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', user.id);
+      } catch {}
+      // Le cookie expire apres 60 s : prochaine mise a jour dans 1 min au plus tot
+      response.cookies.set('seen_ping', '1', { maxAge: 60, path: '/' });
+    }
+  }
+
   return response;
 }
 export const config = {
