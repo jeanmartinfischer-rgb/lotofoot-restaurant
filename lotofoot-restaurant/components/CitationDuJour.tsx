@@ -1,6 +1,5 @@
 'use client';
 
-// Citation du jour : tourne dans la liste, change chaque jour (meme citation pour tous).
 const CITATIONS: string[] = [
   "19h03, première commande. 19h04, le ticket fait deux mètres de long. On est déjà en retard sur une soirée qui vient de commencer. Bienvenue en enfer, installez-vous.",
   "Le mec qui dit \"prenez votre temps\" puis te fixe comme un faucon toutes les 30 secondes. Choisis ton mensonge, frère.",
@@ -43,7 +42,6 @@ const CITATIONS: string[] = [
   "Quoi qu'il arrive, quel que soit le bordel : on rentre crevés, on rentre fiers, on rentre ENSEMBLE. Bravo la team. Vous êtes complètement fous, et je vous adore.",
 ];
 
-// Numero du jour dans l'annee (1 a 366) -> meme citation pour tout le monde le meme jour
 function jourDeLAnnee(): number {
   const now = new Date();
   const debut = new Date(now.getFullYear(), 0, 0);
@@ -55,20 +53,148 @@ export default function CitationDuJour() {
   const citation = CITATIONS[jourDeLAnnee() % CITATIONS.length];
 
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-sang/40 bg-gradient-to-br from-sang/20 via-ardoise to-pitch p-5">
-      {/* Guillemet geant en decoration */}
-      <span className="pointer-events-none absolute -top-4 -left-1 font-display text-[120px] leading-none text-sang/20 select-none">
-        “
-      </span>
-      <div className="relative space-y-2">
-        <p className="font-mono text-[10px] uppercase tracking-widest text-sang-vif">
-          La pensée du jour
-        </p>
-        <p className="font-display text-base md:text-lg leading-snug text-chalk">
+    <section
+      className="relative my-2"
+      style={{ fontFamily: 'var(--font-graff, "Bangers", system-ui)' }}
+    >
+      {/* Rayons d'action qui tournent en fond */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute rounded-2xl opacity-20 citation-rayons"
+        style={{
+          inset: '-12px',
+          background:
+            'repeating-conic-gradient(from 0deg, #1b6ec2 0deg 9deg, #0d4e8c 9deg 18deg)',
+        }}
+      />
+
+      {/* Panneau comic */}
+      <div
+        className="relative rounded-xl citation-pop"
+        style={{
+          background: '#fff7e6',
+          border: '4px solid #111',
+          boxShadow: '7px 7px 0 #111',
+          padding: '26px 18px 30px',
+        }}
+      >
+        {/* Onomatopée BAM */}
+        <span
+          className="absolute citation-shk"
+          style={{
+            top: '-26px',
+            left: '-12px',
+            background: '#ffcf33',
+            color: '#111',
+            fontSize: '26px',
+            padding: '4px 16px',
+            border: '3px solid #111',
+            borderRadius: '8px',
+            transform: 'rotate(-6deg)',
+            boxShadow: '3px 3px 0 #111',
+            WebkitTextStroke: '1px #111',
+          }}
+        >
+          BAM!
+        </span>
+
+        {/* Onomatopée ILS ONT FAIM LES GENS */}
+        <span
+          className="absolute text-center citation-fl"
+          style={{
+            bottom: '-18px',
+            right: '-10px',
+            background: '#ff4d4d',
+            color: '#fff',
+            fontSize: '15px',
+            lineHeight: 1.05,
+            padding: '4px 12px',
+            border: '3px solid #111',
+            borderRadius: '8px',
+            transform: 'rotate(7deg)',
+            boxShadow: '3px 3px 0 #111',
+            WebkitTextStroke: '0.6px #111',
+          }}
+        >
+          ILS ONT FAIM
+          <br />
+          LES GENS!
+        </span>
+
+        {/* Etiquette */}
+        <span
+          className="inline-block mb-2"
+          style={{
+            background: '#1b6ec2',
+            color: '#fff',
+            fontSize: '12px',
+            padding: '3px 12px',
+            border: '2px solid #111',
+            borderRadius: '6px',
+            transform: 'rotate(-2deg)',
+            letterSpacing: '0.5px',
+          }}
+        >
+          ★ LA PENSÉE DU JOUR
+        </span>
+
+        {/* Citation */}
+        <p
+          className="citation-texte"
+          style={{
+            color: '#111',
+            fontSize: '18px',
+            lineHeight: 1.45,
+            letterSpacing: '0.5px',
+            margin: '6px 0 0',
+          }}
+        >
           {citation}
         </p>
-        <p className="text-right font-mono text-[10px] text-chalk/40">— L'Arpège</p>
+
+        {/* Signature */}
+        <p
+          className="text-right"
+          style={{
+            color: '#555',
+            fontSize: '14px',
+            letterSpacing: '1px',
+            margin: '14px 0 0',
+          }}
+        >
+          — L'ARPÈGE
+        </p>
       </div>
+
+      <style>{`
+        @keyframes citationPop {
+          0% { transform: scale(0.4) rotate(-12deg); opacity: 0; }
+          60% { transform: scale(1.06) rotate(3deg); }
+          100% { transform: scale(1) rotate(-1deg); opacity: 1; }
+        }
+        @keyframes citationShk {
+          0%,100% { transform: rotate(-6deg) scale(1); }
+          50% { transform: rotate(-9deg) scale(1.06); }
+        }
+        @keyframes citationFl {
+          0%,100% { transform: rotate(7deg) scale(1); }
+          50% { transform: rotate(10deg) scale(1.06); }
+        }
+        @keyframes citationSpin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes citationDrop {
+          0% { transform: translateY(-20px) scale(0.6); opacity: 0; }
+          70% { transform: translateY(3px) scale(1.05); }
+          100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .citation-pop { animation: citationPop 0.6s cubic-bezier(.2,.9,.3,1.3) forwards; }
+        .citation-rayons { animation: citationSpin 18s linear infinite; }
+        .citation-shk { animation: citationDrop 0.5s ease-out 0.2s both, citationShk 0.35s ease-in-out 4 0.7s; }
+        .citation-fl { animation: citationDrop 0.5s ease-out 0.5s both, citationFl 0.4s ease-in-out 4 1.1s; }
+        .citation-texte { animation: citationDrop 0.4s ease-out 0.5s both; }
+      `}</style>
     </section>
   );
 }
