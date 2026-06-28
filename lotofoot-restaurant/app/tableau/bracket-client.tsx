@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 type Match = {
   id: number;
@@ -21,65 +21,66 @@ type Match = {
 
 type ToursData = Record<string, Match[]>;
 
-const TOURS: { cle: string; label: string; cases: number }[] = [
-  { cle: 'Round of 32', label: '16es de finale', cases: 16 },
-  { cle: 'Round of 16', label: 'Huitiemes de finale', cases: 8 },
-  { cle: 'Quarter-finals', label: 'Quarts de finale', cases: 4 },
-  { cle: 'Semi-finals', label: 'Demi-finales', cases: 2 },
-  { cle: 'Final', label: 'Finale', cases: 1 },
+const TOURS: { cle: string; label: string; court: string; cases: number }[] = [
+  { cle: 'Round of 32', label: '16es de finale', court: '16es', cases: 16 },
+  { cle: 'Round of 16', label: 'Huitiemes de finale', court: '8es', cases: 8 },
+  { cle: 'Quarter-finals', label: 'Quarts de finale', court: 'Quarts', cases: 4 },
+  { cle: 'Semi-finals', label: 'Demi-finales', court: 'Demies', cases: 2 },
+  { cle: 'Final', label: 'Finale', court: 'Finale', cases: 1 },
 ];
 
 const TZ = 'Europe/Paris';
 
-const CARD_H = 88;
-const CARD_W = 210;
-const COL_GAP = 54;
-const PAD = 20;
-
 function dateMatch(iso: string): string {
   const d = new Date(iso);
-  const jour = d.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: '2-digit', timeZone: TZ });
+  const jour = d.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: '2-digit', timeZone: TZ });
   const heure = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: TZ });
-  return jour + ', ' + heure;
+  return jour + ' a ' + heure;
 }
 
 function Ecusson() {
   return (
-    <span style={{ width: 22, height: 22, flexShrink: 0, borderRadius: '4px 4px 8px 8px', background: 'var(--ligne, #3a4049)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-      <span style={{ width: 10, height: 12, background: 'var(--chalk-40, #6b7280)', borderRadius: '2px 2px 5px 5px' }} />
+    <span style={{ width: 26, height: 26, flexShrink: 0, borderRadius: '5px 5px 9px 9px', background: 'var(--ligne, #3a4049)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+      <span style={{ width: 12, height: 14, background: 'var(--chalk-40, #6b7280)', borderRadius: '3px 3px 6px 6px' }} />
     </span>
   );
 }
 
 function Drapeau({ src }: { src: string | null }) {
   if (!src) return <Ecusson />;
-  return <img src={src} alt="" width={22} height={22} style={{ width: 22, height: 22, objectFit: 'contain', flexShrink: 0 }} loading="lazy" />;
+  return <img src={src} alt="" width={26} height={26} style={{ width: 26, height: 26, objectFit: 'contain', flexShrink: 0 }} loading="lazy" />;
 }
 
 function LigneEquipe({ nom, logo, score, gagnant, montrerScore }: { nom: string; logo: string | null; score: number | null; gagnant: boolean | null; montrerScore: boolean; }) {
   const connu = !!nom;
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 26 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0' }}>
       {connu ? <Drapeau src={logo} /> : <Ecusson />}
-      <span style={{ flex: 1, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: connu ? (gagnant ? '#fff' : 'var(--chalk, #e8eaed)') : 'var(--chalk-40, #9aa0a8)', fontWeight: gagnant ? 700 : 400 }}>
+      <span style={{ flex: 1, fontSize: 16, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: connu ? (gagnant ? '#fff' : 'var(--chalk, #e8eaed)') : 'var(--chalk-40, #9aa0a8)', fontWeight: gagnant ? 700 : 500 }}>
         {connu ? nom : 'A definir'}
       </span>
       {montrerScore && score !== null && (
-        <span style={{ fontSize: 14, fontWeight: 700, color: gagnant ? '#fff' : 'var(--chalk-60, #a8aeb6)' }}>{score}</span>
+        <span style={{ fontSize: 17, fontWeight: 700, color: gagnant ? '#fff' : 'var(--chalk-60, #a8aeb6)' }}>{score}</span>
       )}
     </div>
   );
 }
 
-function CarteMatch({ m, top, left }: { m: Match | null; top: number; left: number }) {
+function CarteMatch({ m }: { m: Match | null }) {
   const montrerScore = !!m && (m.fini || m.enCours);
   return (
-    <div style={{ position: 'absolute', top, left, width: CARD_W, height: CARD_H, boxSizing: 'border-box', padding: '8px 11px', border: '1px solid var(--ligne, #3a4049)', borderRadius: 12, background: 'var(--ardoise, #20252c)', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 4 }}>
-      <div style={{ fontSize: 11, color: m?.enCours ? '#ff5a4d' : 'var(--chalk-50, #9aa0a8)', fontWeight: m?.enCours ? 700 : 400 }}>
-        {!m ? 'a venir' : m.enCours ? 'EN DIRECT' : m.fini ? 'Termine' : dateMatch(m.kickoff)}
+    <div style={{ border: '1px solid var(--ligne, #3a4049)', borderRadius: 14, background: 'var(--ardoise, #20252c)', padding: '10px 14px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+        <span style={{ fontSize: 12, color: m?.enCours ? '#ff5a4d' : 'var(--chalk-50, #9aa0a8)', fontWeight: m?.enCours ? 700 : 400 }} className="font-mono">
+          {!m ? 'date a venir' : m.enCours ? 'EN DIRECT' : m.fini ? 'Termine' : dateMatch(m.kickoff)}
+        </span>
       </div>
       <LigneEquipe nom={m?.home ?? ''} logo={m?.home_logo ?? null} score={m?.home_score ?? null} gagnant={m?.home_winner ?? null} montrerScore={montrerScore} />
+      <div style={{ height: 1, background: 'var(--ligne, #3a4049)' }} />
       <LigneEquipe nom={m?.away ?? ''} logo={m?.away_logo ?? null} score={m?.away_score ?? null} gagnant={m?.away_winner ?? null} montrerScore={montrerScore} />
+      {m?.venue && (
+        <div style={{ fontSize: 11, color: 'var(--chalk-40, #8a9099)', marginTop: 4 }}>{m.venue}</div>
+      )}
     </div>
   );
 }
@@ -87,7 +88,7 @@ function CarteMatch({ m, top, left }: { m: Match | null; top: number; left: numb
 export default function BracketClient() {
   const [tours, setTours] = useState<ToursData | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
-  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [tourIndex, setTourIndex] = useState(0);
 
   useEffect(() => {
     fetch('/api/bracket')
@@ -107,80 +108,42 @@ export default function BracketClient() {
     );
   }
 
-  const totalCases = TOURS[0].cases;
-  const SLOT = CARD_H + 16;
-  const hauteurTotale = totalCases * SLOT + PAD * 2;
-
-  function positionsTour(indexTour: number): number[] {
-    const n = TOURS[indexTour].cases;
-    const pas = (totalCases * SLOT) / n;
-    const tops: number[] = [];
-    for (let i = 0; i < n; i++) tops.push(PAD + i * pas + pas / 2 - CARD_H / 2);
-    return tops;
-  }
-
-  const colonneX = (i: number) => PAD + i * (CARD_W + COL_GAP);
-  const largeurTotale = colonneX(TOURS.length - 1) + CARD_W + PAD;
-
-  function allerAuTour(ti: number) {
-    const box = scrollRef.current;
-    if (box) box.scrollTo({ left: colonneX(ti) - PAD, behavior: 'smooth' });
-  }
+  const tour = TOURS[tourIndex];
+  const matchs = tours[tour.cle] ?? [];
+  const cases: (Match | null)[] = [];
+  for (let i = 0; i < tour.cases; i++) cases.push(matchs[i] ?? null);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <h1 className="font-display text-2xl">TABLEAU FINAL</h1>
 
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
         {TOURS.map((t, ti) => (
-          <button key={t.cle} onClick={() => allerAuTour(ti)} className="whitespace-nowrap rounded-full px-3 py-1.5 font-mono text-xs"
-            style={{ flexShrink: 0, border: '1px solid var(--ligne, #3a4049)', background: 'transparent', color: 'var(--chalk-60, #a8aeb6)' }}>
-            {t.label}
+          <button key={t.cle} onClick={() => setTourIndex(ti)} className="whitespace-nowrap rounded-full px-3 py-1.5 font-mono text-xs"
+            style={{
+              flexShrink: 0,
+              border: '1px solid ' + (ti === tourIndex ? '#ff5a4d' : 'var(--ligne, #3a4049)'),
+              background: ti === tourIndex ? 'rgba(255,90,77,0.15)' : 'transparent',
+              color: ti === tourIndex ? '#ff5a4d' : 'var(--chalk-60, #a8aeb6)',
+              fontWeight: ti === tourIndex ? 700 : 400,
+            }}>
+            {t.court}
           </button>
         ))}
       </div>
 
-      <p className="font-mono text-xs text-chalk/40" style={{ margin: 0 }}>
-        Glisse dans tous les sens. Pince pour zoomer (comme une photo).
-      </p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <button onClick={() => setTourIndex((i) => Math.max(0, i - 1))} disabled={tourIndex === 0} aria-label="Tour precedent"
+          style={{ width: 38, height: 38, flexShrink: 0, borderRadius: '50%', border: '1px solid var(--ligne, #3a4049)', background: 'var(--ardoise, #20252c)', color: tourIndex === 0 ? 'var(--chalk-40, #555)' : 'var(--chalk, #e8eaed)', fontSize: 20, cursor: tourIndex === 0 ? 'default' : 'pointer', padding: 0 }}>‹</button>
+        <span className="font-display text-lg" style={{ flex: 1, textAlign: 'center' }}>{tour.label}</span>
+        <button onClick={() => setTourIndex((i) => Math.min(TOURS.length - 1, i + 1))} disabled={tourIndex === TOURS.length - 1} aria-label="Tour suivant"
+          style={{ width: 38, height: 38, flexShrink: 0, borderRadius: '50%', border: '1px solid var(--ligne, #3a4049)', background: 'var(--ardoise, #20252c)', color: tourIndex === TOURS.length - 1 ? 'var(--chalk-40, #555)' : 'var(--chalk, #e8eaed)', fontSize: 20, cursor: tourIndex === TOURS.length - 1 ? 'default' : 'pointer', padding: 0 }}>›</button>
+      </div>
 
-      <div ref={scrollRef} style={{ overflow: 'auto', border: '1px solid var(--ligne, #3a4049)', borderRadius: 16, background: 'var(--pitch, #0f1216)', maxHeight: '70vh', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x pan-y pinch-zoom' }}>
-        <div style={{ position: 'relative', width: largeurTotale, height: hauteurTotale }}>
-          <svg width={largeurTotale} height={hauteurTotale} style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}>
-            {TOURS.slice(0, -1).map((t, ti) => {
-              const tA = positionsTour(ti);
-              const tB = positionsTour(ti + 1);
-              const x1 = colonneX(ti) + CARD_W;
-              const x2 = colonneX(ti + 1);
-              const xm = (x1 + x2) / 2;
-              const lignes: JSX.Element[] = [];
-              for (let j = 0; j < tB.length; j++) {
-                const a = tA[j * 2] + CARD_H / 2;
-                const b = tA[j * 2 + 1] + CARD_H / 2;
-                const c = tB[j] + CARD_H / 2;
-                lignes.push(
-                  <path key={ti + '-' + j} d={'M ' + x1 + ' ' + a + ' H ' + xm + ' M ' + x1 + ' ' + b + ' H ' + xm + ' M ' + xm + ' ' + a + ' V ' + b + ' M ' + xm + ' ' + c + ' H ' + x2} fill="none" stroke="var(--ligne, #3a4049)" strokeWidth="1.5" />
-                );
-              }
-              return <g key={ti}>{lignes}</g>;
-            })}
-          </svg>
-
-          {TOURS.map((t, ti) => {
-            const tA = positionsTour(ti);
-            const matchs = tours[t.cle] ?? [];
-            return (
-              <div key={t.cle}>
-                <div style={{ position: 'absolute', top: 2, left: colonneX(ti), width: CARD_W, textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#ff5a4d' }} className="font-mono">
-                  {t.label}
-                </div>
-                {Array.from({ length: t.cases }).map((_, i) => (
-                  <CarteMatch key={i} m={matchs[i] ?? null} top={tA[i]} left={colonneX(ti)} />
-                ))}
-              </div>
-            );
-          })}
-        </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {cases.map((m, i) => (
+          <CarteMatch key={m?.id ?? i} m={m} />
+        ))}
       </div>
 
       <p className="text-center font-mono text-xs text-chalk/40">
