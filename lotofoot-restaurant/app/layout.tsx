@@ -92,6 +92,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7l4 3 5-6 5 6 4-3-2 12H5Z" /><path d="M5 20h14" /></svg>
                     Vainqueur
                   </Link>
+                  <Link href="/tableau" className={LINK}>
+                    <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 5h6v4H4Z" /><path d="M4 15h6v4H4Z" /><path d="M14 10h6v4h-6Z" /><path d="M10 7h2v5h2" /><path d="M10 17h2v-5" /></svg>
+                    Tableau
+                  </Link>
                   <Link href="/classement" className={LINK}>
                     <svg className={ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4h12v4a6 6 0 0 1-12 0Z" /><path d="M6 5H3v2a3 3 0 0 0 3 3" /><path d="M18 5h3v2a3 3 0 0 1-3 3" /><path d="M10 14h4l-.5 4h-3Z" /><path d="M8 20h8" /></svg>
                     Classement
