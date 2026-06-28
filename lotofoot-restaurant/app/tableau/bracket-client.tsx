@@ -31,10 +31,10 @@ const TOURS: { cle: string; label: string; cases: number }[] = [
 
 const TZ = 'Europe/Paris';
 
-const CARD_H = 96;
-const CARD_W = 230;
-const GAP_Y = 18;
-const COL_GAP = 56;
+const CARD_H = 92;
+const CARD_W = 220;
+const GAP_Y = 16;
+const COL_GAP = 60;
 
 function dateMatch(iso: string): string {
   const d = new Date(iso);
@@ -74,7 +74,7 @@ function LigneEquipe({ nom, logo, score, gagnant, montrerScore }: { nom: string;
 function CarteMatch({ m, top }: { m: Match | null; top: number }) {
   const montrerScore = !!m && (m.fini || m.enCours);
   return (
-    <div style={{ position: 'absolute', top, left: 0, width: CARD_W, minHeight: CARD_H, boxSizing: 'border-box', padding: '10px 12px', border: '1px solid var(--ligne, #3a4049)', borderRadius: 12, background: 'var(--ardoise, #20252c)', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>
+    <div style={{ position: 'absolute', top, left: 0, width: CARD_W, minHeight: CARD_H, boxSizing: 'border-box', padding: '9px 11px', border: '1px solid var(--ligne, #3a4049)', borderRadius: 12, background: 'var(--ardoise, #20252c)', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 5 }}>
       <div style={{ fontSize: 11, color: m?.enCours ? '#ff5a4d' : 'var(--chalk-50, #9aa0a8)', fontWeight: m?.enCours ? 700 : 400 }}>
         {!m ? 'a venir' : m.enCours ? 'EN DIRECT' : m.fini ? 'Termine' : dateMatch(m.kickoff)}
       </div>
@@ -91,7 +91,8 @@ export default function BracketClient() {
   const [tours, setTours] = useState<ToursData | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [tourIndex, setTourIndex] = useState(0);
-  const [largeurVue, setLargeurVue] = useState(360);
+  const [vueW, setVueW] = useState(360);
+  const [vueH, setVueH] = useState(520);
   const vueRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -102,7 +103,10 @@ export default function BracketClient() {
   }, []);
 
   useEffect(() => {
-    function maj() { if (vueRef.current) setLargeurVue(vueRef.current.clientWidth); }
+    function maj() {
+      if (vueRef.current) setVueW(vueRef.current.clientWidth);
+      setVueH(Math.max(420, Math.min(620, window.innerHeight - 220)));
+    }
     maj();
     window.addEventListener('resize', maj);
     return () => window.removeEventListener('resize', maj);
@@ -131,14 +135,26 @@ export default function BracketClient() {
   }
 
   const colonneX = (i: number) => i * (CARD_W + COL_GAP);
-  const decalageX = -colonneX(tourIndex) + (largeurVue - CARD_W) / 2;
-  const decalageXClamp = Math.min(0, decalageX);
 
-  const fleche = (dir: 'g' | 'd', actif: boolean) => ({
-    width: 36, height: 36, flexShrink: 0, borderRadius: '50%',
+  const nbCasesTour = TOURS[tourIndex].cases;
+  const hauteurTourVisible = nbCasesTour * CARD_H + (nbCasesTour - 1) * GAP_Y;
+
+  const scaleH = vueH / (hauteurTourVisible + 24);
+  const scaleW = vueW / (CARD_W + 32);
+  const scale = Math.max(0.42, Math.min(1, Math.min(scaleH, scaleW)));
+
+  const tops = positionsTour(tourIndex);
+  const centreTourY = (tops[0] + CARD_H / 2 + tops[tops.length - 1] + CARD_H / 2) / 2;
+  const centreTourX = colonneX(tourIndex) + CARD_W / 2;
+
+  const translateX = vueW / 2 - centreTourX * scale;
+  const translateY = vueH / 2 - centreTourY * scale;
+
+  const fleche = (actif: boolean) => ({
+    width: 38, height: 38, flexShrink: 0, borderRadius: '50%',
     border: '1px solid var(--ligne, #3a4049)', background: 'var(--ardoise, #20252c)',
     color: actif ? 'var(--chalk, #e8eaed)' : 'var(--chalk-40, #555)',
-    fontSize: 18, cursor: actif ? 'pointer' : 'default', padding: 0,
+    fontSize: 20, cursor: actif ? 'pointer' : 'default', padding: 0,
   } as React.CSSProperties);
 
   return (
@@ -146,25 +162,31 @@ export default function BracketClient() {
       <h1 className="font-display text-2xl">TABLEAU FINAL</h1>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-        <button onClick={() => setTourIndex((i) => Math.max(0, i - 1))} disabled={tourIndex === 0} aria-label="Tour precedent" style={fleche('g', tourIndex !== 0)}>‹</button>
+        <button onClick={() => setTourIndex((i) => Math.max(0, i - 1))} disabled={tourIndex === 0} aria-label="Tour precedent" style={fleche(tourIndex !== 0)}>‹</button>
         <span className="font-mono text-sm" style={{ color: '#ff5a4d', fontWeight: 700, textAlign: 'center', flex: 1 }}>{TOURS[tourIndex].label}</span>
-        <button onClick={() => setTourIndex((i) => Math.min(TOURS.length - 1, i + 1))} disabled={tourIndex === TOURS.length - 1} aria-label="Tour suivant" style={fleche('d', tourIndex !== TOURS.length - 1)}>›</button>
+        <button onClick={() => setTourIndex((i) => Math.min(TOURS.length - 1, i + 1))} disabled={tourIndex === TOURS.length - 1} aria-label="Tour suivant" style={fleche(tourIndex !== TOURS.length - 1)}>›</button>
       </div>
 
-      <div ref={vueRef} style={{ overflow: 'hidden', position: 'relative' }}>
-        <div style={{ position: 'relative', height: hauteurTotale, width: colonneX(TOURS.length - 1) + CARD_W, transform: 'translateX(' + decalageXClamp + 'px)', transition: 'transform 0.45s cubic-bezier(.4,0,.2,1)' }}>
+      <div ref={vueRef} style={{ overflow: 'hidden', position: 'relative', height: vueH, border: '1px solid var(--ligne, #3a4049)', borderRadius: 16, background: 'var(--pitch, #0f1216)' }}>
+        <div style={{
+          position: 'absolute', top: 0, left: 0,
+          width: colonneX(TOURS.length - 1) + CARD_W, height: hauteurTotale,
+          transformOrigin: '0 0',
+          transform: 'translate(' + translateX + 'px,' + translateY + 'px) scale(' + scale + ')',
+          transition: 'transform 0.5s cubic-bezier(.4,0,.2,1)',
+        }}>
           <svg width={colonneX(TOURS.length - 1) + CARD_W} height={hauteurTotale} style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}>
             {TOURS.slice(0, -1).map((t, ti) => {
-              const tops = positionsTour(ti);
-              const topsNext = positionsTour(ti + 1);
+              const tA = positionsTour(ti);
+              const tB = positionsTour(ti + 1);
               const x1 = colonneX(ti) + CARD_W;
               const x2 = colonneX(ti + 1);
               const xm = (x1 + x2) / 2;
               const lignes: JSX.Element[] = [];
-              for (let j = 0; j < topsNext.length; j++) {
-                const a = tops[j * 2] + CARD_H / 2;
-                const b = tops[j * 2 + 1] + CARD_H / 2;
-                const c = topsNext[j] + CARD_H / 2;
+              for (let j = 0; j < tB.length; j++) {
+                const a = tA[j * 2] + CARD_H / 2;
+                const b = tA[j * 2 + 1] + CARD_H / 2;
+                const c = tB[j] + CARD_H / 2;
                 lignes.push(
                   <path key={ti + '-' + j} d={'M ' + x1 + ' ' + a + ' H ' + xm + ' M ' + x1 + ' ' + b + ' H ' + xm + ' M ' + xm + ' ' + a + ' V ' + b + ' M ' + xm + ' ' + c + ' H ' + x2} fill="none" stroke="var(--ligne, #3a4049)" strokeWidth="1.5" />
                 );
@@ -174,12 +196,13 @@ export default function BracketClient() {
           </svg>
 
           {TOURS.map((t, ti) => {
-            const tops = positionsTour(ti);
+            const tA = positionsTour(ti);
             const matchs = tours[t.cle] ?? [];
+            const estVisible = ti === tourIndex;
             return (
-              <div key={t.cle} style={{ position: 'absolute', top: 0, left: colonneX(ti), width: CARD_W, height: hauteurTotale }}>
+              <div key={t.cle} style={{ position: 'absolute', top: 0, left: colonneX(ti), width: CARD_W, height: hauteurTotale, opacity: estVisible ? 1 : 0.4, transition: 'opacity 0.5s' }}>
                 {Array.from({ length: t.cases }).map((_, i) => (
-                  <CarteMatch key={i} m={matchs[i] ?? null} top={tops[i]} />
+                  <CarteMatch key={i} m={matchs[i] ?? null} top={tA[i]} />
                 ))}
               </div>
             );
@@ -187,8 +210,19 @@ export default function BracketClient() {
         </div>
       </div>
 
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 6 }}>
+        {TOURS.map((t, ti) => (
+          <button key={t.cle} onClick={() => setTourIndex(ti)} aria-label={t.label} style={{
+            width: ti === tourIndex ? 20 : 8, height: 8, borderRadius: 4, padding: 0,
+            border: '1px solid var(--ligne, #3a4049)',
+            background: ti === tourIndex ? '#ff5a4d' : 'transparent',
+            cursor: 'pointer', transition: 'width 0.2s',
+          }} />
+        ))}
+      </div>
+
       <p className="text-center font-mono text-xs text-chalk/40">
-        Utilise les fleches pour voyager jusqu'a la finale. Les vainqueurs s'inscriront tout seuls.
+        Avance tour par tour : l'arbre zoome et se recentre jusqu'a la finale.
       </p>
     </div>
   );
