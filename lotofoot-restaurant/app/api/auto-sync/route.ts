@@ -232,31 +232,52 @@ export async function GET(req: NextRequest) {
 
   // ============================================================
   // ETAPE 3 : Recalculer les points de TOUS les matchs termines
+  //   IMPORTANT : on recupere les pronos PAR LOTS de 1000 (pagination),
+  //   sinon Supabase s'arrete a 1000 lignes et les pronos au-dela ne sont
+  //   jamais calcules (ils restent a null).
   // ============================================================
   try {
-    const { data: predsToUpdate } = await admin
-      .from('predictions')
-      .select('id, pred_home, pred_away, points, is_exact_score, is_correct_result, matches!inner(home_score, away_score, status)')
-      .eq('matches.status', 'finished');
+    const TAILLE_LOT = 1000;
+    let debut = 0;
+    let encore = true;
 
-    for (const p of predsToUpdate ?? []) {
-      const m = (p as any).matches;
-      if (m.home_score === null || m.away_score === null) continue;
-      const isExact = p.pred_home === m.home_score && p.pred_away === m.away_score;
-      const predSign = Math.sign(p.pred_home - p.pred_away);
-      const realSign = Math.sign(m.home_score - m.away_score);
-      const isCorrect = predSign === realSign;
-      const points = isExact ? 3 : isCorrect ? 1 : 0;
+    while (encore) {
+      const { data: predsToUpdate, error: errLot } = await admin
+        .from('predictions')
+        .select('id, pred_home, pred_away, points, is_exact_score, is_correct_result, matches!inner(home_score, away_score, status)')
+        .eq('matches.status', 'finished')
+        .order('id', { ascending: true })
+        .range(debut, debut + TAILLE_LOT - 1);
 
-      if (p.points === points && p.is_exact_score === isExact && p.is_correct_result === isCorrect) continue;
+      if (errLot) {
+        results.errors.push('Erreur lot points: ' + errLot.message);
+        break;
+      }
 
-      await admin.from('predictions').update({
-        points,
-        is_exact_score: isExact,
-        is_correct_result: isCorrect,
-        updated_at: new Date().toISOString(),
-      }).eq('id', p.id);
-      results.points_calcules++;
+      const lot = predsToUpdate ?? [];
+      for (const p of lot) {
+        const m = (p as any).matches;
+        if (m.home_score === null || m.away_score === null) continue;
+        const isExact = p.pred_home === m.home_score && p.pred_away === m.away_score;
+        const predSign = Math.sign(p.pred_home - p.pred_away);
+        const realSign = Math.sign(m.home_score - m.away_score);
+        const isCorrect = predSign === realSign;
+        const points = isExact ? 3 : isCorrect ? 1 : 0;
+
+        if (p.points === points && p.is_exact_score === isExact && p.is_correct_result === isCorrect) continue;
+
+        await admin.from('predictions').update({
+          points,
+          is_exact_score: isExact,
+          is_correct_result: isCorrect,
+          updated_at: new Date().toISOString(),
+        }).eq('id', p.id);
+        results.points_calcules++;
+      }
+
+      // S'il y avait moins d'un lot complet, on a tout traite : on s'arrete.
+      if (lot.length < TAILLE_LOT) encore = false;
+      else debut += TAILLE_LOT;
     }
   } catch (err) {
     results.errors.push('Erreur calcul points: ' + String(err));
